@@ -1,0 +1,4 @@
+/* CHECKBOX KITS */
+(function($) {
+    
+})(jQuery);

@@ -1,0 +1,22 @@
+{
+    "name": "babonless",
+    "version": "0.0.1",
+    "description": "Just another LESS library.",
+    "main": "dist/babonjs-0.0.1.js",
+    "ignore": [
+        "node_modules",
+        "**/.*",
+        "bower_components",
+        "test",
+        "tests"
+    ],
+    "authors": [
+        "Nanang Mahdaen El Agung <nanang@mahdaen.name>"
+    ],
+    "keywords": [
+        "UI Kit",
+        "Javascript library"
+    ],
+    "license": "MIT",
+    "homepage": "https://github.com/mahdaen/babonjs"
+}

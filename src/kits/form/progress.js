@@ -1,0 +1,4 @@
+/* PROGRESS KITS */
+(function($) {
+    
+})(jQuery);
