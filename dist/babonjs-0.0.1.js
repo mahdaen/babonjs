@@ -4,15 +4,24 @@
  * Created by Nanang Mahdaen El Aung
  * © 2014 BabonKit. All right reserved.
  *
- * Externla libraries:
- * jQuery, Enquire, Greensock.
+ * External libraries:
+ * jQuery, Enquire.
  */
+
+/* Ensure jQuery and Enquire is loaded */
+if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
+    throw new Error('BabonJS requires jQuery and Enquire!');
+}
 
 /* EXTENDING NATIVE FUNCTIONS */
 (function() {
-    /* Window Object Extender. */
+    /**
+     * Window object extender.
+     * @param obj {object:required} - Object contains key and value to be added to window object.
+     * @private
+     */
     var __extend = function (obj) {
-        if (typeof obj === 'object' && !Array.isArray(obj)) {
+        if (typeof obj === 'object' && obj.indexOf === undefined) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     window[key] = obj[key];
@@ -24,11 +33,20 @@
     /* Creating Native Functions */
     __extend({
         /* Object Type */
+
+        /**
+         * Check whether object is defined or not, whether the object is match with type.
+         * @param obj {*} - Object that will be checked. Use these functions for checking arguments only.
+         * @returns {boolean}
+         */
+        isDefined: function(obj) {
+            return typeof obj !== 'undefined' ? true : false;
+        },
         isString: function(obj) {
             return typeof obj === 'string' ? true : false;
         },
         isObject: function(obj) {
-            return typeof obj === 'object' && !Array.isArray(obj) && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
+            return typeof obj === 'object' && obj.indexOf === undefined && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
         },
         isArray: function(obj) {
             return Array.isArray(obj) || obj.constructor.prototype.hasOwnProperty('splice') && !isJQuery(obj) ? true : false;
@@ -67,8 +85,13 @@
         isDate: function(obj) {
             return !isNaN(new Date(obj).getDate()) ? true : false;
         },
-        
-        /* For Each Looping */
+
+        /**
+         * Foreach loop for both object and array.
+         * @param object {object:required} - Obejct that will pe parsed.
+         * @param func {funtion:required} - Function that will be called in each loop. For array, we give "value" and "index" as arguments. For object, we give "key" and "value" as arguments.
+         * @returns {object itself}
+         */
         foreach: function(object, func) {
             if (isFunction(func)) {
                 if (isArray(object) || isJQuery(object) && isFunction(func)) {
@@ -89,7 +112,11 @@
             return object;
         },
 
-        /* URL Parser */
+        /**
+         * Extract url path.
+         * @param url {string:required} - URL string that will be extracted.
+         * @returns {{root: string, name: string, ext: string}}
+         */
         parseURL: function(url) {
             if (isString(url)) {
                 var splited = url.split('/'),
@@ -146,7 +173,7 @@
                 tar[key] = value;
             });
         }
-        
+
         return this;
     };
     
@@ -317,6 +344,7 @@
         __extend__: __extend
     });
 })();
+
 /* JQUERY DATA SELECTORS */
 (function ($) {
     $.extend(jQuery.expr[':'], {
@@ -648,17 +676,16 @@
         return this;
     };
 })(jQuery);
-/* BABON CORE OBJECTS */
+/* Native Tools */
 (function() {
-    /* Babon core object */
     var Tools = {};
     
-    /* Babon object collections. */
+    /* Tool collections. */
     Tools.variables = {};
     Tools.constants = {};
     Tools.functions = {};
 
-    /* Babon variable setter/getter. */
+    /* Variable setter/getter. */
     Tools.vars = function(name, value) {
         if (name) {
             if (value) {
@@ -671,11 +698,11 @@
         }
     };
     
-    /* Babon constant setter/getter. */
+    /* Constant setter/getter. */
     Tools.cons = function(name, value) {
         if (name) {
             if (value) {
-                if (typeof value === 'function') return console.warn("You can't register constant as a function. Please use Babon.func() rather than Babon.cons().");
+                if (isFunction(value)) return console.warn("You can't register function as a constant. Please use func() rather than cons().");
                 if (Tools.constants[name]) return console.warn('Constant "' + name + '" alerady registered.');
                 return Tools.constants[name] = value;
             } else {
@@ -684,10 +711,10 @@
         }
     };
     
-    /* Babon protected function setter/getter */
+    /* Protected function setter/getter */
     Tools.func = function (name, func) {
-        if (name) {
-            if (func && typeof func === 'function') {
+        if (isString(name)) {
+            if (isFunction(func)) {
                 if (Tools.functions[name]) return console.warn('Function "' + name + '" alerady registered.');
                 Tools.functions[name] = func;
                 
@@ -697,9 +724,10 @@
             }
         }
     };
-    
+
+    /* Prototype Maker */
     Tools.proto = function(name, proto_name, func) {
-        if (name && Tools.functions[name] && proto_name && typeof proto_name === 'string' && func && typeof func === 'function') {
+        if (isString(name) && isFunction(Tools.functions[name]) && isString(proto_name) && isFunction(func)) {
             Tools.functions[name].prototype[proto_name] = func;
             return Tools.functions[name];
         }
@@ -783,50 +811,328 @@
     
     window.$_data = $.findData = DataFinder;
 })(jQuery);
-(function($, $$$, cons, vars, func) {
-    /* Height group generator */
-    func('box:generate-height-group', function(object, ceil) {
-        if (isJQuery(object) && isNumber(ceil)) {
-            var length = object.length;
-            var group = Math.ceil(length / ceil);
-            var obj_index = 0;
-            
-            for (var x = 1; x <= group; ++x) {
-                for (var i = 0; i < ceil; ++i) {
-                    var objx = object[obj_index];
-                    
-                    if (objx) {
-                        $(objx).setData('box-height-group', 'bhg-' + x);
+/**
+ * Public Registry.
+ * Store the application registry into private scope.
+ */
+
+(function(registry) {
+    if (typeof exports === 'object') {
+        /* NodeJS */
+        module.exports = registry();
+    } else if (typeof define === 'function' && define.amd) {
+        /* RequireJS */
+        define(registry);
+    } else {
+        /* Browser */
+        window.Registry = registry();
+    }
+}(function() {
+    var AppReg = {};
+
+    var Registry = function(name, value, option) {
+        /* Continue only when type of name is string*/
+        if (isString(name)) {
+            if (isDefined(value)) {
+                this.locked = false;
+
+                /* Checking whether registry already exist or not and locked or not */
+                if (typeof AppReg[name] !== 'undefined' && AppReg[name].locked === true) {
+                    this.locked = true;
+                }
+
+                this.value = value;
+
+                if (this.locked) {
+                    return console.warn('Registry ' + name + ' already exists as Protected Registry. Please use ".update()" method and give your key to update the registry.');
+                } else {
+                    if (isObject(option) && option.locked === true && isString(option.key)) {
+                        this.locked = true;
+                        this.unlock = option.key;
+
+                        AppReg[name] = this;
+                    } else {
+                        this.locked = false;
+                        this.unlock = null;
+
+                        AppReg[name] = this;
                     }
-                    
-                    obj_index += 1;
+                }
+            } else {
+                if (typeof AppReg[name] !== 'undefined') {
+                    return AppReg[name];
+                } else {
+                    return undefined;
                 }
             }
         }
-    });
-    
-    /* Box ratio counter */
-    func('box:count-ratio', function(width, height) {
-        var getDivisor, temp, divisor;
 
-        getDivisor = function(a, b) {
-            if (b === 0) return a;
-            return getDivisor(b, a % b);
+        return this;
+    };
+
+    Registry.prototype = {
+        update: function(value, key) {
+            if (this.locked === true) {
+                if (!key || key !== this.unlock) {
+                    return console.warn('Unable to update protected registry. Please check your key.');
+                } else {
+                    this.value = value;
+                }
+            }
+
+            return this;
+        }
+    };
+
+    return function(name, value, option) {
+        return new Registry(name, value, option);
+    };
+}));
+
+/**
+ * Kit Automator.
+ * Automaticaly Build Dynamic Content.
+ * @credits - Created by Nanang Mahdaen El Agung.
+ */
+
+(function(automator) {
+    if (typeof exports === 'object') {
+        /* NodeJS */
+        module.exports = automator();
+    } else if (typeof define === 'function' && define.amd) {
+        /* RequireJS */
+        define(automator);
+    } else {
+        /* Browser */
+        window.Automator = automator();
+    }
+}(function() {
+    /* Escape when no jQuery defined */
+    if (typeof jQuery === 'undefined') return console.error('BabonKit requires: jQuery 1.10+ and Enquire!');
+
+    /* Defining jQuery Shortname */
+    var $ = jQuery;
+
+    /* Defining Automator Maps */
+    var AutomatorMaps =  {
+        automator: {},
+        prebuilds: [],
+        disableds: []
+    };
+
+    /**
+     * Automator Generator.
+     * @param name {string:required} - Name of the automator.
+     * @param builder {function:conditional} - Function that will be called. Required when creating automator.
+     * @param auto {optional} - Determine whether the automator will be automaticaly builded when document is ready. Ensure your builder accepting no-params build since we build the automator without parameters.
+     * @constructor
+     */
+    var Automator = function(name, builder, auto) {
+        /* Continue the script only when the type of name is string */
+        if (isString(name)) {
+            /* Continue creating automator when builder is defined */
+            if (isDefined(builder)) {
+                /* Continue creating automator when type of builder is function */
+                if (isFunction(builder)) {
+                    this.name = name;
+                    this.func = builder;
+
+                    this.auto = false;
+                    this.dont = [];
+
+                    AutomatorMaps.automator[name] = this;
+
+                    if (isBoolean(auto)) {
+                        this.auto = auto;
+
+                        if (auto === true) {
+                            AutomatorMaps.prebuilds.push(name);
+                        }
+                    }
+                } else {
+                    /* Escape when error happens */
+                    return console.error('Can not create automator "' + name + '" with ' + typeof builder + ' as a builder.');
+                }
+            } else {
+                /* Continue selecting automator if no builder */
+                if (AutomatorMaps.automator[name]) {
+                    return AutomatorMaps.automator[name];
+                } else {
+                    /* Escape when error happens */
+                    return console.error('Can not get automator "' + name + '" of undefined.');
+                }
+            }
         }
 
-        if (width === height) return '1,1';
+        return this;
+    };
 
-        if (+width < +height) {
-            temp = width;
-            width = height;
-            height = temp;
+    /* Creating the Automator Prototypes */
+    Automator.prototype = {
+        /**
+         * Automator Builder.
+         * @param * {optional} - Build parameters is unlimited. They will be passed to the builder function.
+         * @returns {Automator}
+         */
+        build: function() {
+            /* Check the escape collection before build */
+            if (this.dont.length > 0) {
+                for (var i = 0; i <= this.dont.length; ++i) {
+                    /* If some filter return true, then escape the build */
+                    if (isFunction(this.dont[i]) && this.dont[i]() === true) {
+                        return this;
+                    }
+                }
+                /* Call the builder with forwarding arguments */
+                this.func(arguments);
+            } else {
+                /* Call the builder with forwarding arguments */
+                this.func(arguments);
+            }
+
+            return this;
+        },
+
+        /**
+         * Removing Automator.
+         * @returns {undefined}
+         */
+        remove: function() {
+            delete AutomatorMaps.automator[this.name];
+            return undefined;
+        },
+
+        /**
+         * Register Build Filter.
+         * @param args {function:required} - Function that will be called to determine whether the automator should be builded or not. Function should return true or false.
+         * @param args {array} - Array contains filter function.
+         * @returns {Automator}
+         */
+        escape: function(args) {
+            if (isFunction(args)) {
+                this.dont.push(args);
+            } else if (isArray(args)) {
+                var parent = this;
+
+                foreach(args, function (func) {
+                    if (isFunction(func)) {
+                        parent.dont.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+
+        /**
+         * Change the automator auto mode.
+         * @param bool {boolean:required} - If false, the current automatic state will be removed. If true, the automator will be added to the auto-build lists.
+         * @returns {Automator}
+         */
+        autobuild: function(bool) {
+            var idx = AutomatorMaps.prebuilds.indexOf(this.name);
+
+            if (bool === false && idx > -1) {
+                    AutomatorMaps.prebuilds[idx] = undefined;
+            } else if (bool === true && idx === -1) {
+                AutomatorMaps.prebuilds.push(this.name);
+            }
+
+            this.auto = bool;
+            return this;
+        },
+
+        /**
+         * Check whether the automator is enabled or disabled. No parameters needed.
+         * @returns {boolean}
+         */
+        enabled: function() {
+            var idx = AutomatorMaps.disableds.indexOf(this.name);
+
+            if (idx > -1) {
+                return false;
+            } else {
+                return true;
+            }
+        }
+    };
+
+    /* Binding auto-builder to the window on-ready */
+    $(document).ready(function() {
+        foreach(AutomatorMaps.prebuilds, function (name) {
+            if (isString(name) && Automator(name)) {
+                Automator(name).build();
+            }
+        });
+    });
+
+    /**
+     * Automator Generator Wrapper
+     * @param name
+     * @param builder
+     * @param auto
+     * @returns {Automator}
+     */
+    var automator = function(name, builder, auto) { return new Automator(name, builder, auto); };
+
+    /**
+     * Disabling automator.
+     * @param name {string} - Name of automator that will be disabled.
+     * @returns {*}
+     */
+    automator.disable = function(name) {
+        if (isString(name)) {
+            if (AutomatorMaps.disableds.indexOf(name) === -1) {
+                AutomatorMaps.disableds.push(name);
+            }
         }
 
-        divisor = getDivisor(+width, +height);
+        return name;
+    };
 
-        return 'undefined' === typeof temp ? (width / divisor) + ',' + (height / divisor) : (height / divisor) + ',' + (width / divisor);
-    });
-})(jQuery, jQuery.findData, cons, vars, func);
+    /**
+     * Enabling automator.
+     * @param name {string} - Name of automator that will be enabled.
+     * @returns {*}
+     */
+    automator.enable = function(name) {
+        if (isString(name)) {
+            var idx = AutomatorMaps.disableds.indexOf(name);
+
+            if (idx > -1) {
+                AutomatorMaps.disableds[idx] = undefined;
+            }
+        }
+
+        return name;
+    };
+
+    return automator;
+}));
+
+/**
+ * UI Kit Generator.
+ * Created by mahdaen on 9/15/14.
+ * © 2014 BabonJS. All right reserved.
+ */
+
+(function(generator) {
+    if (typeof exports === 'object') {
+        /* NodeJS */
+        module.exports = generator();
+    } else if (typeof define === 'function' && define.amd) {
+        /* RequireJS */
+        define(generator);
+    } else {
+        /* Browser */
+        window.Generator = generator();
+    }
+}(function () {
+    var GeneratorMaps = {
+        generator: {},
+    }
+}));
+
 /* BABONKIT CORE CONSTRUCTOR. */
 (function($) {
     /* Creating Constructor */
@@ -1275,7 +1581,8 @@
 }(function() {
     return window.BabonKit;
 }));
-(function($, media) {
+
+(function(atmedia) {
     /* Preparing Default Queries */
     window['is-mobile'] = false;
     enquire.register('only screen and (min-device-width : 320px) and (max-device-width : 767px)', {
@@ -1284,7 +1591,7 @@
         }
     });
     window['is-tablet'] = false;
-    enquire.register('only screen and (min-device-width : 768px) and (max-device-width : 1024px)', {
+    enquire.register('only screen and (min-device-width : 768px) and (max-device-width : 1024px), (min-width: 768px) and (max-width: 1200px)', {
         match: function() {
             window['is-tablet'] = true;
         }
@@ -1295,6 +1602,9 @@
             window['is-desktop'] = true;
         }
     });
+    window['is-retina'] = false;
+    if (window.devicePixelRatio && window.devicePixelRatio > 1) window['is-retina'] = true;
+
     /* Media Query Worker */
     var _MQ_ = function(query) {
         this.query = '';
@@ -1346,5 +1656,217 @@
         $_tablet: new _MQ_('only screen and (min-device-width : 768px) and (max-device-width : 1024px)')
     });
 
-    window.$_media = BabonKit.onMedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
-})(jQuery, enquire);
+    window.$_media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
+})(enquire);
+(function($, $$, $$$) {
+    /* Detecting Retina Display */
+    if (window.devicePixelRatio && window.devicePixelRatio > 1) {
+        $$.config('is-retina', true);
+    }
+
+    /* Dynamic Background Image */
+    $$.builder('background', function(object) {
+        !isJQuery(object) ? object = $$$('background') : object;
+
+        if ($$.config('responsive-background-image') && window['__is-tablet'] || window['__is-mobile']) {
+            $_tablet.onReady(function() {
+                object.each(function() {
+                    var target = $(this);
+
+                    var background = $(this).getData('background');
+                    if (background === 'get-child-img') {
+                        background = $('img', this).attr('src');
+                    }
+
+                    if (isString(background)) {
+                        var img_url = parseURL(background);
+                        if (isObject(img_url)) {
+                            img_url = img_url.root + img_url.name + '@tablet.' + img_url.ext;
+
+                            $.ajax({
+                                url: img_url,
+                                type: 'HEAD',
+                                success: function() {
+                                    target.css('backgroundImage', 'url(' + img_url + ')');
+                                },
+                                error: function() {
+                                    target.css('backgroundImage', 'url(' + background + ')');
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+            $_mobile.onReady(function() {
+                object.each(function() {
+                    var target = $(this);
+
+                    var background = $(this).getData('background');
+                    if (background === 'get-child-img') {
+                        background = $('img', this).attr('src');
+                    }
+
+                    if (isString(background)) {
+                        var img_url = parseURL(background);
+
+                        if (isObject(img_url)) {
+                            img_url = img_url.root + img_url.name + '@mobile.' + img_url.ext;
+
+                            $.ajax({
+                                url: img_url,
+                                type: 'HEAD',
+                                success: function() {
+                                    target.css('backgroundImage', 'url(' + img_url + ')');
+                                },
+                                error: function() {
+                                    target.css('backgroundImage', 'url(' + background + ')');
+                                }
+                            });
+                        }
+                    }
+                });
+            });
+        } else {
+            object.each(function() {
+                var background = $(this).getData('background');
+
+                if (background === 'get-child-img') {
+                    background = $('img', this).attr('src');
+                }
+                if (isString(background)) {
+                    var target = this;
+                    $(this).css({
+                        backgroundImage: 'url(' + background + ')'
+                    });
+                }
+            });
+        }
+
+        return object;
+    });
+    $.fn.applyBackground = function() {
+        return $$.build('background')(this);
+    }
+
+    $$.builder('img:retina', function(object) {
+        if (!$$.config('is-retina') || !$$.config('retina-images')) return;
+
+        !isJQuery(object) ? object = $$$('retina-image') : object;
+
+        return object.each(function() {
+            var image = $(this);
+            var source = image.attr('src');
+            var im_src;
+
+            if (source) {
+                var parse = parseURL(source);
+
+                if (parse) {
+                    im_src = parse.root + parse.name + '@2x.' + parse.ext;
+                }
+            }
+
+            if (im_src) {
+                $.ajax({
+                    url: im_src,
+                    success: function(data) {
+                        image.css({
+                            width: image.width(),
+                            height: image.height()
+                        }).attr('src', im_src);
+                    }
+                });
+            }
+        });
+    });
+})(jQuery, BabonKit, jQuery.findData);
+
+/**
+ * Dynamic Background Automator.
+ * Autmatically detect responsive and retina, then set the background dynamically.
+ * @responsive {string:pattern} - background.jpg, background.retina.jpg, background.mobile.jpg, background.mobile.retina.jpg, etc.
+ * @options - mobile, tablet, retina.
+ * @credits - Created by Nanang Mahdaen El Agung.
+ */
+
+(function($, $$, $$$) {
+    /* Setting up registry */
+    Registry('enable-responsive-background', true, {locked: true, key: 'BGD-RSP'});
+    Registry('enable-retina-background', true, {locked: true, key: 'BGD-RTN'});
+
+    var bgAtom = $$('bg:dynamic', function(object) {
+        !isJQuery(object) ? object = $$$('bg-dynamic') : object;
+
+        object.each(function(idx) {
+            var img_src = $(this).getData('bg-dynamic');
+            var new_src = '';
+
+            if (img_src === 'get-child-img') {
+                img_src = $('img', this).attr('src');
+            }
+
+            if (isString(img_src)) {
+                var img_url = parseURL(img_src);
+
+                if (isObject(img_url)) {
+                    /* Proccessing Responsive Background */
+                    if (Registry('enable-responsive-background').value == true) {
+                        if (window['is-mobile'] === true) {
+                            /* Device is Mobile */
+                            new_src = img_url.root + img_url.name + '.mobile.';
+                        } else if (window['is-tablet'] === true) {
+                            /* Device is Tablet */
+                            new_src = img_url.root + img_url.name + '.tablet.';
+                        } else {
+                            /* Device is Desktop */
+                            new_src = img_url.root + img_url.name + '.';
+                        }
+                    } else {
+                        /* Skitp responsive if disabled */
+                        new_src = img_url.root + img_url.name + '.';
+                    }
+
+                    /* Proccessing Retina Backround */
+                    if (Registry('enable-retina-background').value == true) {
+                        /* Proccess if enabled */
+                        if (window['is-retina'] === true) {
+                            /* Device is Retina */
+                            new_src += 'retina.' + img_url.ext;
+                        } else {
+                            /* Device is non Retina */
+                            new_src += img_url.ext;
+                        }
+                    } else {
+                        /* Skip when disabled */
+                        new_src += img_url.ext;
+                    }
+
+                    var target = $(this);
+
+                    $.ajax({
+                        url: new_src,
+                        type: 'HEAD',
+                        success: function() {
+                            target.css('backgroundImage', 'url(' + new_src + ')');
+                        },
+                        error: function() {
+                            target.css('backgroundImage', 'url(' + img_src + ')');
+                        }
+                    });
+                }
+            }
+        });
+    })
+        .autobuild(true)
+        .escape(function() {
+            if ($$('bg:dynamic').enabled() === false) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+    );
+
+    Automator.disable('bg:dynamic');
+
+})(jQuery, Automator, jQuery.findData);

@@ -1,7 +1,7 @@
 {
-    "name": "babonless",
+    "name": "babonjs",
     "version": "0.0.1",
-    "description": "Just another LESS library.",
+    "description": "Just another Javascript library.",
     "main": "dist/babonjs-0.0.1.js",
     "ignore": [
         "node_modules",

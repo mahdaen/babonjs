@@ -1,8 +1,12 @@
 /* EXTENDING NATIVE FUNCTIONS */
 (function() {
-    /* Window Object Extender. */
+    /**
+     * Window object extender.
+     * @param obj {object:required} - Object contains key and value to be added to window object.
+     * @private
+     */
     var __extend = function (obj) {
-        if (typeof obj === 'object' && !Array.isArray(obj)) {
+        if (typeof obj === 'object' && obj.indexOf === undefined) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
                     window[key] = obj[key];
@@ -14,11 +18,20 @@
     /* Creating Native Functions */
     __extend({
         /* Object Type */
+
+        /**
+         * Check whether object is defined or not, whether the object is match with type.
+         * @param obj {*} - Object that will be checked. Use these functions for checking arguments only.
+         * @returns {boolean}
+         */
+        isDefined: function(obj) {
+            return typeof obj !== 'undefined' ? true : false;
+        },
         isString: function(obj) {
             return typeof obj === 'string' ? true : false;
         },
         isObject: function(obj) {
-            return typeof obj === 'object' && !Array.isArray(obj) && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
+            return typeof obj === 'object' && obj.indexOf === undefined && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
         },
         isArray: function(obj) {
             return Array.isArray(obj) || obj.constructor.prototype.hasOwnProperty('splice') && !isJQuery(obj) ? true : false;
@@ -57,8 +70,13 @@
         isDate: function(obj) {
             return !isNaN(new Date(obj).getDate()) ? true : false;
         },
-        
-        /* For Each Looping */
+
+        /**
+         * Foreach loop for both object and array.
+         * @param object {object:required} - Obejct that will pe parsed.
+         * @param func {funtion:required} - Function that will be called in each loop. For array, we give "value" and "index" as arguments. For object, we give "key" and "value" as arguments.
+         * @returns {object itself}
+         */
         foreach: function(object, func) {
             if (isFunction(func)) {
                 if (isArray(object) || isJQuery(object) && isFunction(func)) {
@@ -79,7 +97,11 @@
             return object;
         },
 
-        /* URL Parser */
+        /**
+         * Extract url path.
+         * @param url {string:required} - URL string that will be extracted.
+         * @returns {{root: string, name: string, ext: string}}
+         */
         parseURL: function(url) {
             if (isString(url)) {
                 var splited = url.split('/'),
@@ -136,7 +158,7 @@
                 tar[key] = value;
             });
         }
-        
+
         return this;
     };
     

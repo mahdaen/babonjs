@@ -1,4 +1,4 @@
-(function($, media) {
+(function(atmedia) {
     /* Preparing Default Queries */
     window['is-mobile'] = false;
     enquire.register('only screen and (min-device-width : 320px) and (max-device-width : 767px)', {
@@ -7,7 +7,7 @@
         }
     });
     window['is-tablet'] = false;
-    enquire.register('only screen and (min-device-width : 768px) and (max-device-width : 1024px)', {
+    enquire.register('only screen and (min-device-width : 768px) and (max-device-width : 1024px), (min-width: 768px) and (max-width: 1200px)', {
         match: function() {
             window['is-tablet'] = true;
         }
@@ -18,6 +18,9 @@
             window['is-desktop'] = true;
         }
     });
+    window['is-retina'] = false;
+    if (window.devicePixelRatio && window.devicePixelRatio > 1) window['is-retina'] = true;
+
     /* Media Query Worker */
     var _MQ_ = function(query) {
         this.query = '';
@@ -69,5 +72,5 @@
         $_tablet: new _MQ_('only screen and (min-device-width : 768px) and (max-device-width : 1024px)')
     });
 
-    window.$_media = BabonKit.onMedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
-})(jQuery, enquire);
+    window.$_media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
+})(enquire);
