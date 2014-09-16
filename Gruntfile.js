@@ -23,8 +23,8 @@ module.exports = function(grunt) {
                         'src/media.js',
 
                         /* Automator Scripts */
-                        'src/automator/background.automator.js',
-                        'src/automator/dropdown.automator.js',
+//                        'src/automator/background.automator.js',
+//                        'src/automator/dropdown.automator.js',
                     ]
                 }
             }
