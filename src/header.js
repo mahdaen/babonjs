@@ -6,6 +6,9 @@
  *
  * External libraries:
  * jQuery, Enquire.
+ *
+ * Browser Support:
+ * All modern browser (IE9+).
  */
 
 /* Ensure jQuery and Enquire is loaded */

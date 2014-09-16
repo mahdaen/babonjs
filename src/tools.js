@@ -69,4 +69,6 @@
             };
         }
     });
+
+    lock(['__tools__', 'cons', 'vars', 'func', '__tools__']);
 })();

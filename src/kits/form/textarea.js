@@ -1,4 +1,0 @@
-/* TEXTAREA KITS */
-(function($) {
-    
-})(jQuery);

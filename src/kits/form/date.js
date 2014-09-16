@@ -1,4 +1,0 @@
-/* DATE KITS */
-(function($) {
-    
-})(jQuery);

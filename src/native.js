@@ -1,11 +1,69 @@
 /* EXTENDING NATIVE FUNCTIONS */
 (function() {
+    /* Creating Object Locker */
+    Object.defineProperty(window, 'lock', {
+        writable: false,
+
+        /**
+         * Lock object properties.
+         * @param key {string:required} - The property name.
+         * @param object {object:optional} - The property parent. "window" object will used if not defined.
+         */
+        value: function(key, object) {
+            !isObject(object) ? object = window : object;
+
+            if (isString(key)) {
+                Object.defineProperty(object, key, {
+                    writable: false,
+                    enumerable: false,
+                    configurable: false
+                });
+            } else if (isArray(key)) {
+                for (var i = 0; i <= key.length; ++i) {
+                    if (isString(key[i])) {
+                        Object.defineProperty(object, key[i], {
+                            writable: false,
+                            enumerable: false,
+                            configurable: false
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    /* Creating Object Hider */
+    Object.defineProperty(window, 'hide', {
+        writable: false,
+
+        /**
+         * Hide object properties.
+         * @param key {string:required} - The property name.
+         * @param object {object:optional} - The property parent. "window" object will used if not defined.
+         */
+        value: function(key, object) {
+            !isObject(object) ? object = window : object;
+
+            if (isString(key)) {
+                Object.defineProperty(object, key, {
+                    enumerable: false
+                });
+            } else if (isArray(key)) {
+                for (var i = 0; i <= key.length; ++i) {
+                    Object.defineProperty(object, key[i], {
+                        enumerable: false
+                    });
+                }
+            }
+        }
+    });
+
     /**
      * Window object extender.
      * @param obj {object:required} - Object contains key and value to be added to window object.
      * @private
      */
-    var __extend = function (obj) {
+    var Extend = function (obj) {
         if (typeof obj === 'object' && obj.indexOf === undefined) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -14,11 +72,8 @@
             }
         }
     };
-    
-    /* Creating Native Functions */
-    __extend({
-        /* Object Type */
 
+    var natives = {
         /**
          * Check whether object is defined or not, whether the object is match with type.
          * @param obj {*} - Object that will be checked. Use these functions for checking arguments only.
@@ -52,6 +107,12 @@
         },
         isJQuery: function(obj) {
             return obj && obj.hasOwnProperty('length') && obj.jquery ? true : false;
+        },
+        isAutomator: function(obj) {
+            return obj && obj._constructor.type === 'automator' ? true : false;
+        },
+        isGenerator: function(obj) {
+            return obj && obj._constructor.type == 'generator' ? true : false;
         },
         isHTML: function(obj) {
             return obj && obj.ELEMENT_NODE ? true : false;
@@ -148,8 +209,9 @@
                 };
             }
         }
-    });
-    
+    };
+    Extend(natives);
+
     /* Creating Babon Object */
     var xObject = function(obj) {
         if (isObject(obj)) {
@@ -161,7 +223,7 @@
 
         return this;
     };
-    
+
     /* Creating Prototype */
     xObject.prototype = {
         keys: function() {
@@ -177,7 +239,7 @@
             foreach(key, function(key) {
                 obj[key] = obs[key];
             });
-            
+
             return obj;
         },
         del: function(key) {
@@ -189,61 +251,57 @@
                     delete obj[key];
                 });
             }
-            
+
             return this;
         },
         circle: function(dir) {
             var keys = this.keys();
             if (keys.length < 2) return this;
-            
+
             var objn = new xObject();
             var objo = this;
             var skip = 0;
-            
+
             if (isString(dir) && dir === 'reverse') {
                 skip = (keys.length - 1);
                 var skey = keys[skip];
                 objn[skey] = objo[skey];
             }
-            
+
             foreach(keys, function(key, idx) {
                 if (idx !== skip) objn[key] = objo[key];
             });
-            
+
             if (!isString(dir)) {
                 var skey = keys[skip];
                 objn[skey] = objo[skey];
             }
-            
+
             return objn;
         },
         each: function(func) {
             if (isFunction(func)) {
                 foreach(this, func);
             }
-            
+
             return this;
         }
     };
-    
-    /* Hiding Prototype */
-    if (Object.defineProperty) {
-        foreach(xObject.prototype, function(key, value) {
-            Object.defineProperty(xObject.prototype, key, {
-                enumerable: false,
-            });
-        });
-    }
-    
+
     /* Applying Native Object prototypes */
     foreach(Object.prototype, function(key, value) {
         xObject.prototype[key] = value;
     });
-    
+
+    /* Hiding Prototype */
+    foreach(xObject.prototype, function(key, value) {
+        lock(key, xObject.prototype);
+    });
+
     /* Extended Array */
     var xArray = function(array) {
         !array ? array = [] : array;
-        
+
         if (isArray(array)) {
             var obj = this;
             foreach(array, function(value, index) {
@@ -252,17 +310,17 @@
         }
         return this;
     };
-    
+
     /* Cloning native array prototypes */
     xArray.prototype = Object.create(Array.prototype);
-    
+
     /* Creating custom prototypes */
     var xAProto = {
         each: function(func) {
             if (isFunction(func)) {
                 foreach(this, func);
             }
-            
+
             return this;
         },
         del: function(index) {
@@ -283,13 +341,13 @@
                     on = on.del(val);
                 });
             }
-            
+
             return on;
         },
         circle: function(dir) {
             !dir ? dir = 'backward' : dir;
             var arr = new xArray();
-            
+
             if (dir === 'backward') {
                 var odd = this;
                 foreach(odd, function(val, idx) {
@@ -304,28 +362,33 @@
                     if (idx !== ln) arr.push(val);
                 });
             }
-            
+
             return arr;
         }
     };
-    
+
     /* Applying custom prototypes */
     foreach(xAProto, function(key, value) {
         xArray.prototype[key] = value;
     });
-    
+
     /* Locking prototypes if possible */
-    if (Object.defineProperty) {
-        foreach(xAProto, function(key) {
-            Object.defineProperty(xArray.prototype, key, {
-                enumerable: false
-            });
-        });
-    }
-    
-    __extend({
+    foreach(xAProto, function(key) {
+        lock(key, xAProto);
+    });
+
+    Extend({
         xObject: function(OBJECT) {return new xObject(OBJECT)},
         xArray: function(ARRAY) {return new xArray(ARRAY)},
-        __extend__: __extend
+        __extend__: Extend
+    });
+
+    /* Locking Native Objects */
+    foreach(['__extend__', 'xObject', 'xArray'], function(key) {
+        lock(key);
+    });
+    foreach(natives, function(key) {
+        lock(key);
     });
 })();
+

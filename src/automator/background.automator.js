@@ -8,10 +8,10 @@
 
 (function($, $$, $$$) {
     /* Setting up registry */
-    Registry('enable-responsive-background', true, {locked: true, key: 'BGD-RSP'});
-    Registry('enable-retina-background', true, {locked: true, key: 'BGD-RTN'});
+    Registry('enable-responsive-background', true, {lock: true, key: 'BGD-RSP'});
+    Registry('enable-retina-background', true, {lock: true, key: 'BGD-RTN'});
 
-    var bgAtom = $$('bg:dynamic', function(object) {
+    var bgAtom = $$('bg:dynamic', function(object, name) {
         !isJQuery(object) ? object = $$$('bg-dynamic') : object;
 
         object.each(function(idx) {
@@ -83,7 +83,4 @@
             }
         }
     );
-
-    Automator.disable('bg:dynamic');
-
 })(jQuery, Automator, jQuery.findData);

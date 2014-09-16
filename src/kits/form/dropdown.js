@@ -1,4 +1,0 @@
-/* DROPDOWN KITS */
-(function($) {
-    
-})(jQuery);

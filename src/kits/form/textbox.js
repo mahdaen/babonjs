@@ -1,4 +1,0 @@
-/* TEXTBOX KITS */
-(function($) {
-
-})(jQuery);

@@ -1,4 +1,0 @@
-/* SLIDER KITS */
-(function($) {
-    
-})(jQuery);

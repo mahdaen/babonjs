@@ -20,12 +20,11 @@ module.exports = function(grunt) {
                         'src/registry.js',
                         'src/automator.js',
                         'src/generator.js',
-                        'src/kit.js',
                         'src/media.js',
-                        'src/kits/public.js',
 
                         /* Automator Scripts */
-                        'src/atmr/background.automator.js',
+                        'src/automator/background.automator.js',
+                        'src/automator/dropdown.automator.js',
                     ]
                 }
             }

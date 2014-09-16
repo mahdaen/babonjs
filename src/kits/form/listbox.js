@@ -1,4 +1,0 @@
-/* LISTBOX KITS */
-(function($) {
-    
-})(jQuery);

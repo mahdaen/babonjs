@@ -1,4 +1,0 @@
-/* FILE KITS */
-(function($) {
-    
-})(jQuery);

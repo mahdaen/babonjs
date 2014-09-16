@@ -14,6 +14,7 @@
     } else {
         /* Browser */
         window.Automator = automator();
+        lock('Automator');
     }
 }(function() {
     /* Escape when no jQuery defined */
@@ -30,6 +31,15 @@
     };
 
     /**
+     * Automator Generator Wrapper
+     * @param name
+     * @param builder
+     * @param auto
+     * @returns {Automator}
+     */
+    var automator = function(name, builder, auto) { return new Automator(name, builder, auto); };
+
+    /**
      * Automator Generator.
      * @param name {string:required} - Name of the automator.
      * @param builder {function:conditional} - Function that will be called. Required when creating automator.
@@ -43,32 +53,59 @@
             if (isDefined(builder)) {
                 /* Continue creating automator when type of builder is function */
                 if (isFunction(builder)) {
-                    this.name = name;
-                    this.func = builder;
+                    var Automator = function() {
+                        this._constructor = function(){};
+                        this._constructor.id = name;
+                        this._constructor.func = builder;
 
-                    this.auto = false;
-                    this.dont = [];
+                        this.auto = false;
+                        this.dont = [];
+                        this._constructor.hand = {};
 
-                    AutomatorMaps.automator[name] = this;
+                        this._constructor.type = 'automator';
 
-                    if (isBoolean(auto)) {
-                        this.auto = auto;
+                        if (isBoolean(auto)) {
+                            this.auto = auto;
 
-                        if (auto === true) {
-                            AutomatorMaps.prebuilds.push(name);
+                            if (auto === true) {
+                                AutomatorMaps.prebuilds.push(name);
+                            }
                         }
-                    }
-                } else {
-                    /* Escape when error happens */
-                    return console.error('Can not create automator "' + name + '" with ' + typeof builder + ' as a builder.');
-                }
-            } else {
-                /* Continue selecting automator if no builder */
-                if (AutomatorMaps.automator[name]) {
+
+                        /* Locking constructor name */
+                        lock('_constructor', this);
+                        lock(['id', 'func', 'type'], this._constructor);
+
+                        return this;
+                    };
+
+                    Automator.prototype = defaultModules;
+
+                    foreach(builder.prototype, function(name, func) {
+                        Automator.prototype[name] = func;
+                        lock(name, Automator.prototype);
+                    });
+
+                    /* Adding new automator to map */
+                    AutomatorMaps.automator[name] = new Automator();
+
+                    /* Updating Automator Lists */
+                    automator.list = Object.keys(AutomatorMaps.automator);
+
                     return AutomatorMaps.automator[name];
                 } else {
                     /* Escape when error happens */
-                    return console.error('Can not get automator "' + name + '" of undefined.');
+                    console.warn('Can\'t create automator "' + name + '" with ' + typeof builder + ' as a builder.');
+                    return false;
+                }
+            } else {
+                /* Continue selecting automator if no builder */
+                if (isAutomator(AutomatorMaps.automator[name])) {
+                    return AutomatorMaps.automator[name];
+                } else {
+                    /* Escape when error happens */
+                    console.warn('Automator "' + name + '" undefined.');
+                    return false;
                 }
             }
         }
@@ -77,7 +114,7 @@
     };
 
     /* Creating the Automator Prototypes */
-    Automator.prototype = {
+    var defaultModules = {
         /**
          * Automator Builder.
          * @param * {optional} - Build parameters is unlimited. They will be passed to the builder function.
@@ -93,10 +130,10 @@
                     }
                 }
                 /* Call the builder with forwarding arguments */
-                this.func(arguments);
+                return this._constructor.func.apply(this, arguments);
             } else {
                 /* Call the builder with forwarding arguments */
-                this.func(arguments);
+                return this._constructor.func.apply(this, arguments);
             }
 
             return this;
@@ -107,8 +144,15 @@
          * @returns {undefined}
          */
         remove: function() {
-            delete AutomatorMaps.automator[this.name];
-            return undefined;
+            /* Deleting automator from map */
+            if (isAutomator(this._constructor.id)) {
+                delete AutomatorMaps.automator[this._constructor.id];
+
+                /* Updating automator list */
+                return automator.list = Object.keys(AutomatorMaps.automator);
+            }
+
+            return this;
         },
 
         /**
@@ -139,12 +183,12 @@
          * @returns {Automator}
          */
         autobuild: function(bool) {
-            var idx = AutomatorMaps.prebuilds.indexOf(this.name);
+            var idx = AutomatorMaps.prebuilds.indexOf(this._constructor.id);
 
             if (bool === false && idx > -1) {
                     AutomatorMaps.prebuilds[idx] = undefined;
             } else if (bool === true && idx === -1) {
-                AutomatorMaps.prebuilds.push(this.name);
+                AutomatorMaps.prebuilds.push(this._constructor.id);
             }
 
             this.auto = bool;
@@ -156,33 +200,74 @@
          * @returns {boolean}
          */
         enabled: function() {
-            var idx = AutomatorMaps.disableds.indexOf(this.name);
+            var idx = AutomatorMaps.disableds.indexOf(this._constructor.id);
 
             if (idx > -1) {
                 return false;
             } else {
                 return true;
             }
+        },
+
+        /**
+         * Binding custom callback to automator.
+         * @param name
+         * @param func
+         * @returns {Automator}
+         */
+        bind: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                this._constructor.hand[name] = func;
+            }
+
+            return this;
+        },
+
+        /**
+         * Remove custom callback.
+         * @param name
+         * @returns {Automator}
+         */
+        unbind: function(name) {
+            if (isString(name) && isFunction(this._constructor.hand[name])) {
+                delete this._constructor.hand[name];
+            }
+
+            return this;
+        },
+
+        /**
+         * Call the callbacks.
+         * @param parent - The object that will be applied to callbacks.
+         * @returns {Automator}
+         */
+        forward: function(parent) {
+            foreach(this._constructor.hand, function(name, func) {
+                if (isObject(parent)) {
+                    func.apply(parent);
+                } else {
+                    func();
+                }
+            });
+
+            return this;
         }
     };
+    automator.module = Automator.prototype = defaultModules;
+
+    /* Locking prototypes */
+    foreach(automator.module, function(key) {
+        lock(key, automator.module);
+    });
 
     /* Binding auto-builder to the window on-ready */
     $(document).ready(function() {
         foreach(AutomatorMaps.prebuilds, function (name) {
-            if (isString(name) && Automator(name)) {
+            if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
                 Automator(name).build();
             }
         });
     });
-
-    /**
-     * Automator Generator Wrapper
-     * @param name
-     * @param builder
-     * @param auto
-     * @returns {Automator}
-     */
-    var automator = function(name, builder, auto) { return new Automator(name, builder, auto); };
 
     /**
      * Disabling automator.
@@ -215,6 +300,18 @@
 
         return name;
     };
+
+    /**
+     * Get the list of automators.
+     * @returns {Array}
+     */
+    automator.list = Object.keys(AutomatorMaps.automator);
+
+    /**
+     * Core Automator Generator. Use it when you want to create automator and need to add your own prototypes.
+     * @type {Automator}
+     */
+    automator.core = Automator;
 
     return automator;
 }));

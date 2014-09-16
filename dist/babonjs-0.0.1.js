@@ -6,6 +6,9 @@
  *
  * External libraries:
  * jQuery, Enquire.
+ *
+ * Browser Support:
+ * All modern browser (IE9+).
  */
 
 /* Ensure jQuery and Enquire is loaded */
@@ -15,12 +18,70 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
 /* EXTENDING NATIVE FUNCTIONS */
 (function() {
+    /* Creating Object Locker */
+    Object.defineProperty(window, 'lock', {
+        writable: false,
+
+        /**
+         * Lock object properties.
+         * @param key {string:required} - The property name.
+         * @param object {object:optional} - The property parent. "window" object will used if not defined.
+         */
+        value: function(key, object) {
+            !isObject(object) ? object = window : object;
+
+            if (isString(key)) {
+                Object.defineProperty(object, key, {
+                    writable: false,
+                    enumerable: false,
+                    configurable: false
+                });
+            } else if (isArray(key)) {
+                for (var i = 0; i <= key.length; ++i) {
+                    if (isString(key[i])) {
+                        Object.defineProperty(object, key[i], {
+                            writable: false,
+                            enumerable: false,
+                            configurable: false
+                        });
+                    }
+                }
+            }
+        }
+    });
+
+    /* Creating Object Hider */
+    Object.defineProperty(window, 'hide', {
+        writable: false,
+
+        /**
+         * Hide object properties.
+         * @param key {string:required} - The property name.
+         * @param object {object:optional} - The property parent. "window" object will used if not defined.
+         */
+        value: function(key, object) {
+            !isObject(object) ? object = window : object;
+
+            if (isString(key)) {
+                Object.defineProperty(object, key, {
+                    enumerable: false
+                });
+            } else if (isArray(key)) {
+                for (var i = 0; i <= key.length; ++i) {
+                    Object.defineProperty(object, key[i], {
+                        enumerable: false
+                    });
+                }
+            }
+        }
+    });
+
     /**
      * Window object extender.
      * @param obj {object:required} - Object contains key and value to be added to window object.
      * @private
      */
-    var __extend = function (obj) {
+    var Extend = function (obj) {
         if (typeof obj === 'object' && obj.indexOf === undefined) {
             for (var key in obj) {
                 if (obj.hasOwnProperty(key)) {
@@ -29,11 +90,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             }
         }
     };
-    
-    /* Creating Native Functions */
-    __extend({
-        /* Object Type */
 
+    var natives = {
         /**
          * Check whether object is defined or not, whether the object is match with type.
          * @param obj {*} - Object that will be checked. Use these functions for checking arguments only.
@@ -67,6 +125,12 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         },
         isJQuery: function(obj) {
             return obj && obj.hasOwnProperty('length') && obj.jquery ? true : false;
+        },
+        isAutomator: function(obj) {
+            return obj && obj._constructor.type === 'automator' ? true : false;
+        },
+        isGenerator: function(obj) {
+            return obj && obj._constructor.type == 'generator' ? true : false;
         },
         isHTML: function(obj) {
             return obj && obj.ELEMENT_NODE ? true : false;
@@ -163,8 +227,9 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 };
             }
         }
-    });
-    
+    };
+    Extend(natives);
+
     /* Creating Babon Object */
     var xObject = function(obj) {
         if (isObject(obj)) {
@@ -176,7 +241,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
         return this;
     };
-    
+
     /* Creating Prototype */
     xObject.prototype = {
         keys: function() {
@@ -192,7 +257,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             foreach(key, function(key) {
                 obj[key] = obs[key];
             });
-            
+
             return obj;
         },
         del: function(key) {
@@ -204,61 +269,57 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     delete obj[key];
                 });
             }
-            
+
             return this;
         },
         circle: function(dir) {
             var keys = this.keys();
             if (keys.length < 2) return this;
-            
+
             var objn = new xObject();
             var objo = this;
             var skip = 0;
-            
+
             if (isString(dir) && dir === 'reverse') {
                 skip = (keys.length - 1);
                 var skey = keys[skip];
                 objn[skey] = objo[skey];
             }
-            
+
             foreach(keys, function(key, idx) {
                 if (idx !== skip) objn[key] = objo[key];
             });
-            
+
             if (!isString(dir)) {
                 var skey = keys[skip];
                 objn[skey] = objo[skey];
             }
-            
+
             return objn;
         },
         each: function(func) {
             if (isFunction(func)) {
                 foreach(this, func);
             }
-            
+
             return this;
         }
     };
-    
-    /* Hiding Prototype */
-    if (Object.defineProperty) {
-        foreach(xObject.prototype, function(key, value) {
-            Object.defineProperty(xObject.prototype, key, {
-                enumerable: false,
-            });
-        });
-    }
-    
+
     /* Applying Native Object prototypes */
     foreach(Object.prototype, function(key, value) {
         xObject.prototype[key] = value;
     });
-    
+
+    /* Hiding Prototype */
+    foreach(xObject.prototype, function(key, value) {
+        lock(key, xObject.prototype);
+    });
+
     /* Extended Array */
     var xArray = function(array) {
         !array ? array = [] : array;
-        
+
         if (isArray(array)) {
             var obj = this;
             foreach(array, function(value, index) {
@@ -267,17 +328,17 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         }
         return this;
     };
-    
+
     /* Cloning native array prototypes */
     xArray.prototype = Object.create(Array.prototype);
-    
+
     /* Creating custom prototypes */
     var xAProto = {
         each: function(func) {
             if (isFunction(func)) {
                 foreach(this, func);
             }
-            
+
             return this;
         },
         del: function(index) {
@@ -298,13 +359,13 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     on = on.del(val);
                 });
             }
-            
+
             return on;
         },
         circle: function(dir) {
             !dir ? dir = 'backward' : dir;
             var arr = new xArray();
-            
+
             if (dir === 'backward') {
                 var odd = this;
                 foreach(odd, function(val, idx) {
@@ -319,31 +380,36 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     if (idx !== ln) arr.push(val);
                 });
             }
-            
+
             return arr;
         }
     };
-    
+
     /* Applying custom prototypes */
     foreach(xAProto, function(key, value) {
         xArray.prototype[key] = value;
     });
-    
+
     /* Locking prototypes if possible */
-    if (Object.defineProperty) {
-        foreach(xAProto, function(key) {
-            Object.defineProperty(xArray.prototype, key, {
-                enumerable: false
-            });
-        });
-    }
-    
-    __extend({
+    foreach(xAProto, function(key) {
+        lock(key, xAProto);
+    });
+
+    Extend({
         xObject: function(OBJECT) {return new xObject(OBJECT)},
         xArray: function(ARRAY) {return new xArray(ARRAY)},
-        __extend__: __extend
+        __extend__: Extend
+    });
+
+    /* Locking Native Objects */
+    foreach(['__extend__', 'xObject', 'xArray'], function(key) {
+        lock(key);
+    });
+    foreach(natives, function(key) {
+        lock(key);
     });
 })();
+
 
 /* JQUERY DATA SELECTORS */
 (function ($) {
@@ -747,6 +813,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             };
         }
     });
+
+    lock(['__tools__', 'cons', 'vars', 'func', '__tools__']);
 })();
 /* DOM DATA ATTRIBUTE FILTERS. */
 (function($) {
@@ -829,35 +897,40 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     }
 }(function() {
     var AppReg = {};
+    var RegKey = {};
 
     var Registry = function(name, value, option) {
         /* Continue only when type of name is string*/
         if (isString(name)) {
             if (isDefined(value)) {
-                this.locked = false;
+                this._constructor = function(){};
+                this._constructor.locked = false;
 
                 /* Checking whether registry already exist or not and locked or not */
-                if (typeof AppReg[name] !== 'undefined' && AppReg[name].locked === true) {
-                    this.locked = true;
+                if (typeof AppReg[name] !== 'undefined' && AppReg[name]._constructor.locked === true) {
+                    this._constructor.locked = true;
                 }
 
                 this.value = value;
+                this.name = name;
 
-                if (this.locked) {
+                if (this._constructor.locked) {
                     return console.warn('Registry ' + name + ' already exists as Protected Registry. Please use ".update()" method and give your key to update the registry.');
                 } else {
-                    if (isObject(option) && option.locked === true && isString(option.key)) {
-                        this.locked = true;
-                        this.unlock = option.key;
+                    if (isObject(option) && option.lock === true && isString(option.key)) {
+                        this._constructor.locked = true;
+                        RegKey[name] = option.key;
 
                         AppReg[name] = this;
                     } else {
-                        this.locked = false;
-                        this.unlock = null;
+                        this._constructor.locked = false;
+                        this._constructor.unlock = null;
 
                         AppReg[name] = this;
                     }
                 }
+
+                lock('_constructor', this);
             } else {
                 if (typeof AppReg[name] !== 'undefined') {
                     return AppReg[name];
@@ -872,8 +945,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
     Registry.prototype = {
         update: function(value, key) {
-            if (this.locked === true) {
-                if (!key || key !== this.unlock) {
+            if (this._constructor.locked === true) {
+                if (!key || key !== RegKey[this.name]) {
                     return console.warn('Unable to update protected registry. Please check your key.');
                 } else {
                     this.value = value;
@@ -883,6 +956,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             return this;
         }
     };
+
+    foreach(Registry.prototype, function (name) {
+        lock(name, Registry.prototype);
+    });
 
     return function(name, value, option) {
         return new Registry(name, value, option);
@@ -905,6 +982,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     } else {
         /* Browser */
         window.Automator = automator();
+        lock('Automator');
     }
 }(function() {
     /* Escape when no jQuery defined */
@@ -921,6 +999,15 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
 
     /**
+     * Automator Generator Wrapper
+     * @param name
+     * @param builder
+     * @param auto
+     * @returns {Automator}
+     */
+    var automator = function(name, builder, auto) { return new Automator(name, builder, auto); };
+
+    /**
      * Automator Generator.
      * @param name {string:required} - Name of the automator.
      * @param builder {function:conditional} - Function that will be called. Required when creating automator.
@@ -934,32 +1021,59 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             if (isDefined(builder)) {
                 /* Continue creating automator when type of builder is function */
                 if (isFunction(builder)) {
-                    this.name = name;
-                    this.func = builder;
+                    var Automator = function() {
+                        this._constructor = function(){};
+                        this._constructor.id = name;
+                        this._constructor.func = builder;
 
-                    this.auto = false;
-                    this.dont = [];
+                        this.auto = false;
+                        this.dont = [];
+                        this._constructor.hand = {};
 
-                    AutomatorMaps.automator[name] = this;
+                        this._constructor.type = 'automator';
 
-                    if (isBoolean(auto)) {
-                        this.auto = auto;
+                        if (isBoolean(auto)) {
+                            this.auto = auto;
 
-                        if (auto === true) {
-                            AutomatorMaps.prebuilds.push(name);
+                            if (auto === true) {
+                                AutomatorMaps.prebuilds.push(name);
+                            }
                         }
-                    }
-                } else {
-                    /* Escape when error happens */
-                    return console.error('Can not create automator "' + name + '" with ' + typeof builder + ' as a builder.');
-                }
-            } else {
-                /* Continue selecting automator if no builder */
-                if (AutomatorMaps.automator[name]) {
+
+                        /* Locking constructor name */
+                        lock('_constructor', this);
+                        lock(['id', 'func', 'type'], this._constructor);
+
+                        return this;
+                    };
+
+                    Automator.prototype = defaultModules;
+
+                    foreach(builder.prototype, function(name, func) {
+                        Automator.prototype[name] = func;
+                        lock(name, Automator.prototype);
+                    });
+
+                    /* Adding new automator to map */
+                    AutomatorMaps.automator[name] = new Automator();
+
+                    /* Updating Automator Lists */
+                    automator.list = Object.keys(AutomatorMaps.automator);
+
                     return AutomatorMaps.automator[name];
                 } else {
                     /* Escape when error happens */
-                    return console.error('Can not get automator "' + name + '" of undefined.');
+                    console.warn('Can\'t create automator "' + name + '" with ' + typeof builder + ' as a builder.');
+                    return false;
+                }
+            } else {
+                /* Continue selecting automator if no builder */
+                if (isAutomator(AutomatorMaps.automator[name])) {
+                    return AutomatorMaps.automator[name];
+                } else {
+                    /* Escape when error happens */
+                    console.warn('Automator "' + name + '" undefined.');
+                    return false;
                 }
             }
         }
@@ -968,7 +1082,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
 
     /* Creating the Automator Prototypes */
-    Automator.prototype = {
+    var defaultModules = {
         /**
          * Automator Builder.
          * @param * {optional} - Build parameters is unlimited. They will be passed to the builder function.
@@ -984,10 +1098,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     }
                 }
                 /* Call the builder with forwarding arguments */
-                this.func(arguments);
+                return this._constructor.func.apply(this, arguments);
             } else {
                 /* Call the builder with forwarding arguments */
-                this.func(arguments);
+                return this._constructor.func.apply(this, arguments);
             }
 
             return this;
@@ -998,8 +1112,15 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
          * @returns {undefined}
          */
         remove: function() {
-            delete AutomatorMaps.automator[this.name];
-            return undefined;
+            /* Deleting automator from map */
+            if (isAutomator(this._constructor.id)) {
+                delete AutomatorMaps.automator[this._constructor.id];
+
+                /* Updating automator list */
+                return automator.list = Object.keys(AutomatorMaps.automator);
+            }
+
+            return this;
         },
 
         /**
@@ -1030,12 +1151,12 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
          * @returns {Automator}
          */
         autobuild: function(bool) {
-            var idx = AutomatorMaps.prebuilds.indexOf(this.name);
+            var idx = AutomatorMaps.prebuilds.indexOf(this._constructor.id);
 
             if (bool === false && idx > -1) {
                     AutomatorMaps.prebuilds[idx] = undefined;
             } else if (bool === true && idx === -1) {
-                AutomatorMaps.prebuilds.push(this.name);
+                AutomatorMaps.prebuilds.push(this._constructor.id);
             }
 
             this.auto = bool;
@@ -1047,33 +1168,74 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
          * @returns {boolean}
          */
         enabled: function() {
-            var idx = AutomatorMaps.disableds.indexOf(this.name);
+            var idx = AutomatorMaps.disableds.indexOf(this._constructor.id);
 
             if (idx > -1) {
                 return false;
             } else {
                 return true;
             }
+        },
+
+        /**
+         * Binding custom callback to automator.
+         * @param name
+         * @param func
+         * @returns {Automator}
+         */
+        bind: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                this._constructor.hand[name] = func;
+            }
+
+            return this;
+        },
+
+        /**
+         * Remove custom callback.
+         * @param name
+         * @returns {Automator}
+         */
+        unbind: function(name) {
+            if (isString(name) && isFunction(this._constructor.hand[name])) {
+                delete this._constructor.hand[name];
+            }
+
+            return this;
+        },
+
+        /**
+         * Call the callbacks.
+         * @param parent - The object that will be applied to callbacks.
+         * @returns {Automator}
+         */
+        forward: function(parent) {
+            foreach(this._constructor.hand, function(name, func) {
+                if (isObject(parent)) {
+                    func.apply(parent);
+                } else {
+                    func();
+                }
+            });
+
+            return this;
         }
     };
+    automator.module = Automator.prototype = defaultModules;
+
+    /* Locking prototypes */
+    foreach(automator.module, function(key) {
+        lock(key, automator.module);
+    });
 
     /* Binding auto-builder to the window on-ready */
     $(document).ready(function() {
         foreach(AutomatorMaps.prebuilds, function (name) {
-            if (isString(name) && Automator(name)) {
+            if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
                 Automator(name).build();
             }
         });
     });
-
-    /**
-     * Automator Generator Wrapper
-     * @param name
-     * @param builder
-     * @param auto
-     * @returns {Automator}
-     */
-    var automator = function(name, builder, auto) { return new Automator(name, builder, auto); };
 
     /**
      * Disabling automator.
@@ -1107,6 +1269,18 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         return name;
     };
 
+    /**
+     * Get the list of automators.
+     * @returns {Array}
+     */
+    automator.list = Object.keys(AutomatorMaps.automator);
+
+    /**
+     * Core Automator Generator. Use it when you want to create automator and need to add your own prototypes.
+     * @type {Automator}
+     */
+    automator.core = Automator;
+
     return automator;
 }));
 
@@ -1126,460 +1300,256 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     } else {
         /* Browser */
         window.Generator = generator();
+        lock('Generator');
     }
 }(function () {
+    /* Creating jQuery Wrapper */
+    $ = jQuery;
+
+    /* Creating Collections */
     var GeneratorMaps = {
         generator: {},
+        protected: [],
+        counter: 0,
     }
-}));
 
-/* BABONKIT CORE CONSTRUCTOR. */
-(function($) {
-    /* Creating Constructor */
-    var _K_ = function(name, init_config) {
-        this.version = '0.1.0';
-        this.build = '920';
-        
+    /**
+     * Custom Generator Wrapper.
+     * @param name
+     * @param maker
+     * @returns {Generator}
+     */
+    var generator = function(name, maker, option) { return new Generator(name, maker, option); };
+
+    /**
+     * Creating Custom Generator.
+     * @param name {string:required} - Generator Name.
+     * @param maker {string:conditional} - Function that will be called to generate the kit.
+     * @returns {Generator}
+     * @constructor
+     */
+    var Generator = function(name, maker, option) {
         if (isString(name)) {
-            if (__lists.hasOwnProperty(name)) {
-                /* Creating new object */
-                var object = new __lists[name](init_config);
-                object['kit-name'] = name;
-                
-                /* Applying core object to new object */
-                foreach(__core_props, function(key, value) {
-                    object[key] = value;
-                });
-                
-                /* Applying constructor prototypes if defined */
-                if (object.hasOwnProperty('__constructor')) {
-                    if (!object.constructor.prototype) object.constructor.prototype = {};
-                    
-                    var constructor = __lists[object.__constructor];
-                    if (constructor) {
-                        foreach(constructor.prototype, function(key, value) {
-                            object.constructor.prototype[key] = value;
-                        });
+            if (isDefined(maker)) {
+                if (isFunction(maker)) {
+                    this._constructor = function(){};
+                    this._constructor.id = name;
+                    this._constructor.type = 'generator';
+                    this._constructor.func = maker;
+
+                    this.data = {};
+                    this.html = $('');
+
+                    /* Checking whether generator is should locked or not. */
+                    if (isObject(option) && option.lock === true && isString(option.key)) {
+                        var gen = GeneratorMaps[name];
+
+                        /* Checking whether generator already exists or not and locked or not */
+                        if (isGenerator(gen) && gen.locked === true) {
+                            return console.warn('Can\'t update protected generator ' + name + '. Please use "Generator.update()" method to replace the generator.');
+                        } else {
+                            /* Locking Object */
+                            this._constructor.locked = true;
+                            this._constructor.unlock = option.key;
+
+                            /* Adding new Generator to map */
+                            GeneratorMaps.generator[name] = this;
+                            GeneratorMaps.protected.push(name);
+                        }
+                    } else {
+                        /* Adding new Generator to map */
+                        GeneratorMaps.generator[name] = this;
                     }
+
+                    if (isObject(option) && option.extendable === true) {
+                        this._constructor.fluid = true;
+                    } else {
+                        this._constructor.fluid = false;
+                    }
+
+                    /* Locking and hiding properties */
+                    lock('_constructor', this);
+                    lock(['id', 'type', 'fluid'], this._constructor);
+                    hide(['locked', 'unlock', 'func'], this._constructor);
+
+                    /* Updating Generator Lists */
+                    generator.list = Object.keys(GeneratorMaps.generator);
+                } else {
+                    return console.warn('Can\'t create Generator ' + name + ' with ' + typeof maker + ' as a maker.');
                 }
-                
-                /* Creating new name if undefined */
-                if (!object.name) {
-                    object.name = __random(name);
-                }
-                
-                /* Adding ID to object and adding object to mounted lists */
-                object['kit-id'] = __mount.count++;
-                __mount.lists[object['kit-id']] = object;
-                
-                /* Adding commont attributes to outer and inner node */
-                object.outer.setData({
-                    'kit': name,
-                    'kit-id': object['kit-id'],
-                    'outer-box': ''
-                }).addClass(object.name);
-                object.inner.setData({
-                    'kit-id': object['kit-id'],
-                    'inner-box': ''
-                });
-                $('*', object.inner).setData('kit-id', object['kit-id']);
-                
-                return object;
             } else {
-                return new BabonKit('template');
+                if (isObject(GeneratorMaps.generator[name])) {
+                    return GeneratorMaps.generator[name];
+                } else {
+                    return console.warn('Generator "' + name + '" undefined.');
+                }
             }
         }
-        
+
         return this;
     };
-    var BabonKit = function(STR_KIT_NAME, OBJ_INIT_CONFIG) {return new _K_(STR_KIT_NAME, OBJ_INIT_CONFIG)}
-    
-    /* Creating Object Lists */
-    var __registry = {
-        lists: {},
-        count: {},
-        mount: {
-            lists: {},
-            count: 0},
-        build: {},
-        config: {
-            'pre-build': false,
-            'is-retina': false
-        }
-    };
-    BabonKit.registry = __registry;
-    
-    /* Creating Core Object Properties */
-    var __core_props = {
-        'kit-id': 0,
-        'childs': {},
-        'parent': null,
-        'babonkit': '0.1.0'
-    };
-    
-    /* Creating Template */
-    var Template = function(init) {
-        /* Object must have object holder */
-        this.outer = $('<div class="object-sample"><div class="frame">');
-        /* Object must have inner holder. Used as receiver of append method. */
-        this.inner = $('<div class="inner">').appendTo($('.frame', this.outer));
-        
-        /* Handling init config */
-        if (init) {
-            if (init.name) this.name = init.name;
-            if (init.outer) this.outer = init.outer;
-            if (init.inner) this.inner = init.inner;
-        }
-        
-        /* Adding object name as outer class name */
-        this.outer.addClass(this.name);
-        
-        return this;
-    };
-    Template.prototype = {
-        content: function(content) {
-            this.inner.html(content);
-            
-            return this;
-        },
-        mount: function() {
-            console.log('test');
-            
-            return this;
-        }
-    };
-    
-    /* Prototyping */
-    var __core_proto = {
-        append: function(object, target_node){
-            if (isBabonKit(object)) {
-                if (!isString(target_node)) {
-                    if (isJQuery(this.inner) && isJQuery(object.outer)) {
-                        this.inner.append(object.outer);
-                    }
-                } else {
-                    if (isJQuery(this[target_node]) && isJQuery(object.outer)) {
-                        this[target_node].append(object.outer);
+
+    /**
+     * Generator Prototypes.
+     * @type {{}}
+     */
+    generator.module = Generator.prototype = {
+        make: function() {
+            var mst = this;
+            var cst = this._constructor;
+
+            var Generator = function() {
+                for(var key in mst) {
+                    if (mst.hasOwnProperty(key)) {
+                        this[key] = mst[key];
                     }
                 }
-                
-                this.childs[object.name] = object;
-                object.parent = this;
-            }
-            
-            return this;
+
+                return this;
+            };
+
+            Generator.prototype = defaultModules;
+
+            foreach(this._constructor.func.prototype, function(name, func) {
+                Generator.prototype[name] = func;
+                lock(name, Generator.prototype);
+            });
+
+            return this._constructor.func.apply(new Generator(), arguments);
         },
-        appendTo: function(target, target_node){
-            if (isBabonKit(target)) {
-                if (isString(target_node)) {
-                    if (isJQuery(target[target_node]) && isJQuery(this.outer)) {
-                        target[target_node].append(this.outer);
-                    }
-                } else {
-                    if (isJQuery(target.inner) && isJQuery(this.outer)) {
-                        target.inner.append(this.outer);
-                    }
-                }
-                
-                target.childs[this.name] = this;
-                this.parent = target;
+        build: function() {
+            var automator = Automator(this._constructor.id);
+
+            if (isAutomator(automator)) {
+                automator.build(this.html);
             }
-            
-            return this;
-        },
-        prepend: function(object, target_node) {
-            if (isBabonKit(object)) {
-                if (!isString(target_node)) {
-                    if (isJQuery(this.inner) && isJQuery(object.outer)) {
-                        this.inner.prepend(object.outer);
-                    }
-                } else {
-                    if (isJQuery(this[target_node]) && isJQuery(object.outer)) {
-                        this[target_node].prepend(object.outer);
-                    }
-                }
-                
-                this.childs[object.name] = object;
-                object.parent = this;
-            }
-            
-            return this;
-        },
-        prependTo: function(target, target_node) {
-            if (isBabonKit(target)) {
-                if (isString(target_node)) {
-                    if (isJQuery(target[target_node]) && isJQuery(this.outer)) {
-                        target[target_node].prepend(this.outer);
-                    }
-                } else {
-                    if (isJQuery(target.inner) && isJQuery(this.outer)) {
-                        target.inner.prepend(this.outer);
-                    }
-                }
-                
-                target.childs[this.name] = this;
-                this.parent = target;
-            }
-            
+
             return this;
         },
         remove: function() {
-            if (this.outer) {
-                this.outer.remove();
+            if (isGenerator(GeneratorMaps.generator[this._constructor.id])) {
+                /* Deleting Automator if exist */
+                if (isAutomator(this._constructor.id)) {
+                    Automator(this._constructor.id).remove();
+                }
+
+                /* Deleting generator from map */
+                this.html.remove();
+                delete GeneratorMaps.generator[this._constructor.id];
+
+                /* Updating Generator Lists */
+                return generator.list = Object.keys(GeneratorMaps.generator);
             }
-            if (this.parent) {
-                /*this.parent.childs[this.name] = null;*/
-                delete this.parent.childs[this.name];
-            }
-            
+
+            return this;
+        }
+    };
+
+    var defaultModules = {
+        appendTo: function() {
+            this.html.appendTo(arguments);
+
             return this;
         },
-        style: function(object, target_node) {
-            if (isObject(object)) {
-                if (isString(target_node) && isJQuery(this[target_node])) {
-                    this[target_node].css(object);
-                } else {
-                    if (isJQuery(this.outer)) {
-                        this.outer.css(object);
-                    }
-                }
-            }
-            
+        prependTo: function() {
+            this.html.prependTo(arguments);
+
             return this;
         },
-        renderTo: function(object) {
-            if (isObject(object)) return this;
-            
-            var target = $(object);
-            
-            if (target && target.length > 0) {
-                target.append(this.outer);
-            }
-            
+        animate: function() {
+            this.html.animate(arguments);
+
+            return this;
+        },
+        addClass: function() {
+            this.html.addClass(arguments);
+
+            return this;
+        },
+        toggleClass: function() {
+            this.html.toggleClass(arguments);
+
+            return this;
+        },
+        remove: function() {
+            this.html.remove();
+
             return this;
         }
     };
-    var __defl_proto = function(object) {
-        /* Checking whether object has prototype or not. */
-        if (!object.prototype) {
-            object.prototype = {};
-        }
-        /* Appending default prototype */
-        for(var key in __core_proto) {
-            if (__core_proto.hasOwnProperty(key) && !object.prototype.hasOwnProperty(key)) {
-                object.prototype[key] = __core_proto[key];
-            }
-        }
-        
-        return object;
-    }
-    
-    /* Creating registry lists wrapper */
-    var __lists = __registry.lists;
-    var __count = __registry.count;
-    var __mount = __registry.mount;
-    var __build = __registry.build;
-    var __setup = __registry.config;
-    
-    /* Random name generator and index increaser */
-    var __random = function(name) {
-        if (name && __count[name]) {
-            return name + '-' + __count[name]++;
-        }
-    };
-    
-    /* Creating Registrar */
-    var _R_ = function(name, object) {
-        if (isString(name)) {
-            if (object) {
-                if (__lists[name]) {
-                    return __lists[name];
-                } else {
-                    object = __defl_proto(object);
-                    __count[name] = 1;
-                    if (object.hasOwnProperty('build')) __build[name] = object.build;
-                    return __lists[name] = object;
-                }
-            }
-        } else if (isObject(name)) {
-            foreach(name, function(name, object) {
-                if (!__lists[name]) {
-                    object = __defl_proto(object);
-                    if (object.hasOwnProperty('build')) __build[name] = object.build;
-                    __lists[name] = object;
-                    __count[name] = 1;
-                }
-            });
 
-            return __lists;
-        }
-        
-        return new BabonKit();
-    };
-    BabonKit.register = function(STR_KIT_NAME, FUNC_KIT_HANLDER) {return _R_(STR_KIT_NAME, FUNC_KIT_HANLDER)};
-    
-    /* Creating HTML Decoder */
-    BabonKit.encode = function(obj) {
-        !isJQuery(obj) ? obj = $(obj) : obj;
-        
-        return obj;
-    };
-    
-    /* Creating Object Extender */
-    var constructor = function(name) {
-        if (isString(name)) {
-            this.__constructor = name;
-        }
-        
+    /* Locking prototypes if possible */
+    foreach(generator.module, function(key) {
+        lock(key, generator.module);
+    });
+
+    var reconstructor = function() {
         return this;
     };
-    var _X_ = function(src, des, args) {
-        if (!isString(src) || !isObject(des) || !isArray(args)) return false;
-        var obj = __lists[src];
-        
-        if (isFunction(obj)) {
-            constructor.call(des, src);
-            obj.apply(des, args);
-        }
-        
-        return this;
-    };
-    BabonKit.extend = function(KIT_SOURCE, KIT_TARGET, OBJ_INIT_CONFIG) {return _X_(KIT_SOURCE, KIT_TARGET, OBJ_INIT_CONFIG)};
-    
-    /* Creating Renderer */
-    BabonKit.render = function(name) {
-        if (isString(name)) {
-            if (__lists[name] && __lists[name].hasOwnProperty('render')) {
-                __lists[name].render();
-            }
-        } else if (isArray(name)) {
-            foreach(name, function(name, i) {
-                if (__lists[name] && __lists[name].hasOwnProperty('render')) __lists[name].render();
-            });
-        } else {
-            if (__lists && isObject(__lists)) {
-                foreach(__lists, function(name, object) {
-                    if (object.hasOwnProperty('render')) object.render();
-                });
-            }
-        }
-        
-        return new BabonKit();
-    };
-    
-    /* Creating builder */
-    var _B_ = function (object, rule) {
-        /* If the object is jQuery object, then build only this object. */
-        if (isJQuery(object)) {
-            if (object.length === 1) {
-                if (isString(rule)) {
-                    var builder = __build[rule];
-                    if (builder) return builder(object);
-                } else {
-                    /* Getting kit name */
-                    var kit = object.getData('kit');
 
-                    /* If has kit name, then find the builder. */
-                    if (isString(kit)) {
-                        var builder = __build[kit];
+    generator.extend = function(from, into, args) {
+        var master = GeneratorMaps.generator[from];
 
-                        /* If builder is available, then run it and return the result */
-                        if (isFunction(builder)) {
-                            return builder(object);
-                        }
-                    }
-                }
-            } else {
-                foreach(object, function(object) {
-                    BabonKit.build($(object), rule);
-                });
-            }
-        } else if (isString(object)) {
-            /* Run specific builder if the given argument is only string or builder name. */
-            if (isFunction(__build[object])) {
-                return __build[object];
-            }
-        } else {
-            /* Run all builder if no argument defined */
-            foreach(__build, function(name, object) {
-                object();
-            });
-        }
-    };
-    BabonKit.build = function(JQUERY_OBJECT, STR_KIT_NAME) {return _B_(JQUERY_OBJECT, STR_KIT_NAME)};
-    
-    /* Builder Maker */
-    var _B_R_ = function(name, func) {
-        if (isString(name) && isFunction(func)) {
-            /* Return existing builder if already exists */
-            if (__build[name]) return __build[name];
-            /* Register new builder if not exists */
-            return __build[name] = func;
-        } else {
-            return console.error('Name should be string, and function should be function!');
-        }
-    };
-    BabonKit.builder = BabonKit.build.register = function(STR_NAME, FUNC_HANLDER) {return _B_R_(STR_NAME, FUNC_HANLDER)};
-    $.fn.buildKit = function() {return BabonKit.build(this);};
-    $.fn.build = function(name, option) {
-        if (isString(name)) {
-            BabonKit.build(name)(this);
+        if (isGenerator(master)) {
+            reconstructor.call(into, from);
+            master.constructor.func.apply(into, args);
         }
 
         return this;
-    }
-    
-    /* Creating configurator */
-    var _C_ = function(name, value) {
-        if (isString(name)) {
-            if (value) {
-                return __setup[name] = value;
-            } else {
-                if (__setup[name]) return __setup[name];
-            }
-        } else if (isObject(name)) {
-            foreach(name, function(key, value) {
-                __setup[key] = value;
-            });
-            
-            return name;
-        } else {
-            return __setup;
-        }
     };
-    BabonKit.config = function(STR_CONFIG_KEY, CONFIG_VALUE) {return _C_(STR_CONFIG_KEY, CONFIG_VALUE)};
+    generator.update = function(name, maker, key) {
+        if (isString(name)) {
+            var gen = GeneratorMaps.generator[name];
 
-    /* Creating finder */
-    var _F_ = function(name) {
-        var list = Object.keys(__lists);
-        if (isString(name) && list.indexOf(name) > 0) return list.indexOf(name);
-        
+            if (isGenerator(gen) && isFunction(maker) && gen.locked === true && isObject(option) && key === gen.unlock) {
+                gen.func = maker;
+
+                return gen;
+            }
+        }
+
         return undefined;
     };
-    BabonKit.find = function(STR_KIT_NAME) {return _F_(STR_KIT_NAME)};
+    generator.lock = function(name, key) {
+        if (isString(name) && isString(key)) {
+            var gen = GeneratorMaps.generator[name];
 
-    /* Adding template to lists */
-    BabonKit.register({
-        'template': Template,
-    });
-    
-    /* Attaching BabonObject to window */
-    window.BabonKit = window.$_babon = BabonKit;
-    
-    /* Startup Builder */
-    $(document).ready(function() {
-        if (BabonKit.config('pre-build') === true) {
-            BabonKit.build();
+            if (isGenerator(gen)) {
+                gen.locked = true;
+                gen.unlock = key;
+
+                return gen;
+            }
         }
-    });
-})(jQuery);
-/* Require JS */
-(function(factory){
-    if (typeof define !== 'undefined' && define.amd) {
-        define(factory);
-    }
-}(function() {
-    return window.BabonKit;
+
+        return undefined;
+    };
+    generator.free = function(name, key) {
+        if (isString(name) && isString(key)) {
+            var gen = GeneratorMaps.generator[name];
+
+            if (isGenerator(gen) && gen.locked === true && isString(key) && key === gen.unlock) {
+                gen.locked = false;
+                gen.unlock = null;
+
+                GeneratorMaps.protected[GeneratorMaps.protected.indexOf(gen.id)] = undefined;
+
+                return gen;
+            }
+        }
+
+        return undefined;
+    };
+
+    generator.list = Object.keys(GeneratorMaps.generator);
+
+    /**
+     * Creating Core Generator Constructor. Use it when you want to create Generator and need to add your own prototypes.
+     * @type {Generator}
+     */
+    generator.core = Generator;
+
+    return generator;
 }));
 
 (function(atmedia) {
@@ -1604,6 +1574,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     });
     window['is-retina'] = false;
     if (window.devicePixelRatio && window.devicePixelRatio > 1) window['is-retina'] = true;
+
+    hide(['is-mobile', 'is-tablet', 'is-desktop', 'is-retina']);
 
     /* Media Query Worker */
     var _MQ_ = function(query) {
@@ -1658,129 +1630,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
     window.$_media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
 })(enquire);
-(function($, $$, $$$) {
-    /* Detecting Retina Display */
-    if (window.devicePixelRatio && window.devicePixelRatio > 1) {
-        $$.config('is-retina', true);
-    }
-
-    /* Dynamic Background Image */
-    $$.builder('background', function(object) {
-        !isJQuery(object) ? object = $$$('background') : object;
-
-        if ($$.config('responsive-background-image') && window['__is-tablet'] || window['__is-mobile']) {
-            $_tablet.onReady(function() {
-                object.each(function() {
-                    var target = $(this);
-
-                    var background = $(this).getData('background');
-                    if (background === 'get-child-img') {
-                        background = $('img', this).attr('src');
-                    }
-
-                    if (isString(background)) {
-                        var img_url = parseURL(background);
-                        if (isObject(img_url)) {
-                            img_url = img_url.root + img_url.name + '@tablet.' + img_url.ext;
-
-                            $.ajax({
-                                url: img_url,
-                                type: 'HEAD',
-                                success: function() {
-                                    target.css('backgroundImage', 'url(' + img_url + ')');
-                                },
-                                error: function() {
-                                    target.css('backgroundImage', 'url(' + background + ')');
-                                }
-                            });
-                        }
-                    }
-                });
-            });
-            $_mobile.onReady(function() {
-                object.each(function() {
-                    var target = $(this);
-
-                    var background = $(this).getData('background');
-                    if (background === 'get-child-img') {
-                        background = $('img', this).attr('src');
-                    }
-
-                    if (isString(background)) {
-                        var img_url = parseURL(background);
-
-                        if (isObject(img_url)) {
-                            img_url = img_url.root + img_url.name + '@mobile.' + img_url.ext;
-
-                            $.ajax({
-                                url: img_url,
-                                type: 'HEAD',
-                                success: function() {
-                                    target.css('backgroundImage', 'url(' + img_url + ')');
-                                },
-                                error: function() {
-                                    target.css('backgroundImage', 'url(' + background + ')');
-                                }
-                            });
-                        }
-                    }
-                });
-            });
-        } else {
-            object.each(function() {
-                var background = $(this).getData('background');
-
-                if (background === 'get-child-img') {
-                    background = $('img', this).attr('src');
-                }
-                if (isString(background)) {
-                    var target = this;
-                    $(this).css({
-                        backgroundImage: 'url(' + background + ')'
-                    });
-                }
-            });
-        }
-
-        return object;
-    });
-    $.fn.applyBackground = function() {
-        return $$.build('background')(this);
-    }
-
-    $$.builder('img:retina', function(object) {
-        if (!$$.config('is-retina') || !$$.config('retina-images')) return;
-
-        !isJQuery(object) ? object = $$$('retina-image') : object;
-
-        return object.each(function() {
-            var image = $(this);
-            var source = image.attr('src');
-            var im_src;
-
-            if (source) {
-                var parse = parseURL(source);
-
-                if (parse) {
-                    im_src = parse.root + parse.name + '@2x.' + parse.ext;
-                }
-            }
-
-            if (im_src) {
-                $.ajax({
-                    url: im_src,
-                    success: function(data) {
-                        image.css({
-                            width: image.width(),
-                            height: image.height()
-                        }).attr('src', im_src);
-                    }
-                });
-            }
-        });
-    });
-})(jQuery, BabonKit, jQuery.findData);
-
 /**
  * Dynamic Background Automator.
  * Autmatically detect responsive and retina, then set the background dynamically.
@@ -1791,10 +1640,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
 (function($, $$, $$$) {
     /* Setting up registry */
-    Registry('enable-responsive-background', true, {locked: true, key: 'BGD-RSP'});
-    Registry('enable-retina-background', true, {locked: true, key: 'BGD-RTN'});
+    Registry('enable-responsive-background', true, {lock: true, key: 'BGD-RSP'});
+    Registry('enable-retina-background', true, {lock: true, key: 'BGD-RTN'});
 
-    var bgAtom = $$('bg:dynamic', function(object) {
+    var bgAtom = $$('bg:dynamic', function(object, name) {
         !isJQuery(object) ? object = $$$('bg-dynamic') : object;
 
         object.each(function(idx) {
@@ -1866,7 +1715,26 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             }
         }
     );
+})(jQuery, Automator, jQuery.findData);
 
-    Automator.disable('bg:dynamic');
+(function($, $$, $$$) {
+    Registry('dropdown:index', 0, {lock: true, key: 'DRP-001'});
+    Registry('dropdown:codes', 'dropdown-', {lock: true, key: 'DRP-001'});
 
+
+    var DropDown = function(object) {
+        !isJQuery(object) ? object = $$$('dropdown-kit') : object;
+
+        return object.each(function(idx) {
+            var dd_id = Registry('dropdown:codes').value + Registry('dropdown:index').value + 1;
+            var dd_tp = $(this).setData('dd-id', dd_id).getData('dropdown-kit');
+        });
+    };
+    DropDown.prototype = {
+        test: function() {
+            console.log(this);
+        }
+    };
+
+    $$('dropdown', DropDown, true);
 })(jQuery, Automator, jQuery.findData);

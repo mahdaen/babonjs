@@ -1,4 +1,0 @@
-/* TOGGLER KITS */
-(function($) {
-    
-})(jQuery);

@@ -1,4 +1,0 @@
-/* TREE KITS */
-(function($) {
-    
-})(jQuery);

@@ -1,4 +1,0 @@
-/* RANGE KITS */
-(function($) {
-    
-})(jQuery);
