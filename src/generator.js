@@ -113,13 +113,12 @@
             var cst = this._constructor;
 
             var Generator = function() {
-                this._constructor = cst._constructor;
+                this._constructor = cst;
                 lock('_constructor', this);
 
                 for(var key in mst) {
                     if (mst.hasOwnProperty(key)) {
                         this[key] = mst[key];
-                        hide(key, this);
                     }
                 }
 
