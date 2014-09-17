@@ -1,58 +1,51 @@
 /* EXTENDING NATIVE FUNCTIONS */
 (function() {
-    /* Creating Object Locker */
-    Object.defineProperty(window, 'lock', {
-        writable: false,
-
-        /**
-         * Lock object properties.
-         * @param key {string:required} - The property name.
-         * @param object {object:optional} - The property parent. "window" object will used if not defined.
-         */
-        value: function(key, object) {
-            !isObject(object) ? object = window : object;
-
-            if (isString(key)) {
-                Object.defineProperty(object, key, {
-                    enumerable: false,
-                });
-            } else if (isArray(key)) {
-                for (var i = 0; i <= key.length; ++i) {
-                    if (isString(key[i])) {
-                        Object.defineProperty(object, key[i], {
-                            enumerable: false,
-                        });
-                    }
-                }
-            }
-        }
-    });
-
-    /* Creating Object Hider */
-    Object.defineProperty(window, 'hide', {
-        writable: false,
-
-        /**
-         * Hide object properties.
-         * @param key {string:required} - The property name.
-         * @param object {object:optional} - The property parent. "window" object will used if not defined.
-         */
-        value: function(key, object) {
-            !isObject(object) ? object = window : object;
-
-            if (isString(key)) {
-                Object.defineProperty(object, key, {
-                    enumerable: false
-                });
-            } else if (isArray(key)) {
-                for (var i = 0; i <= key.length; ++i) {
-                    Object.defineProperty(object, key[i], {
-                        enumerable: false
-                    });
-                }
-            }
-        }
-    });
+    /**
+     * Hide object properties.
+     * @param key {string:required} - The property name.
+     * @param object {object:optional} - The property parent. "window" object will used if not defined.
+     */
+    window.hide = function(key, object) {
+//        !isObject(object) ? object = window : object;
+//
+//        if (isString(key)) {
+//            Object.defineProperty(object, key, {
+//                enumerable: false
+//            });
+//        } else if (isArray(key)) {
+//            for (var i = 0; i <= key.length; ++i) {
+//                Object.defineProperty(object, key[i], {
+//                    enumerable: false
+//                });
+//            }
+//        }
+    }
+    /**
+     * Lock object properties.
+     * @param key {string:required} - The property name.
+     * @param object {object:optional} - The property parent. "window" object will used if not defined.
+     */
+    window.lock = function(key, object) {
+//        !isObject(object) ? object = window : object;
+//
+//        if (isString(key)) {
+//            Object.defineProperty(object, key, {
+//                writable: false,
+//                enumerable: false,
+//                configurable: false
+//            });
+//        } else if (isArray(key)) {
+//            for (var i = 0; i <= key.length; ++i) {
+//                if (isString(key[i])) {
+//                    Object.defineProperty(object, key[i], {
+//                        writable: false,
+//                        enumerable: false,
+//                        configurable: false
+//                    });
+//                }
+//            }
+//        }
+    }
 
     /**
      * Window object extender.
