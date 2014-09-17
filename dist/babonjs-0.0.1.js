@@ -104,7 +104,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             return typeof obj === 'string' ? true : false;
         },
         isObject: function(obj) {
-            return typeof obj === 'object' && obj.indexOf === undefined && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
+            return typeof obj === 'object' && obj.indexOf === undefined && obj.splice === 'undefined' ? true : false;
         },
         isArray: function(obj) {
             return Array.isArray(obj) || obj.splice !== 'undefined' && !isJQuery(obj) ? true : false;
