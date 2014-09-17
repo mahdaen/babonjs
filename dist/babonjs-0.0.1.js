@@ -1405,7 +1405,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 for(var key in mst) {
                     if (mst.hasOwnProperty(key)) {
                         this[key] = mst[key];
-                        hid(key, this);
+                        hide(key, this);
                     }
                 }
 
