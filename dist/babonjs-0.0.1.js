@@ -1399,9 +1399,13 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             var cst = this._constructor;
 
             var Generator = function() {
+                this._constructor = cst._constructor;
+                lock('_constructor', this);
+
                 for(var key in mst) {
                     if (mst.hasOwnProperty(key)) {
                         this[key] = mst[key];
+                        hid(key, this);
                     }
                 }
 
@@ -1409,9 +1413,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             };
 
             Generator.prototype = defaultModules;
-
             foreach(this._constructor.func.prototype, function(name, func) {
                 Generator.prototype[name] = func;
+            });
+            foreach(Generator.prototype, function(name, func) {
                 lock(name, Generator.prototype);
             });
 
