@@ -14,17 +14,13 @@
 
             if (isString(key)) {
                 Object.defineProperty(object, key, {
-                    writable: false,
                     enumerable: false,
-                    configurable: false
                 });
             } else if (isArray(key)) {
                 for (var i = 0; i <= key.length; ++i) {
                     if (isString(key[i])) {
                         Object.defineProperty(object, key[i], {
-                            writable: false,
                             enumerable: false,
-                            configurable: false
                         });
                     }
                 }
@@ -381,6 +377,14 @@
         xObject: function(OBJECT) {return new xObject(OBJECT)},
         xArray: function(ARRAY) {return new xArray(ARRAY)},
         __extend__: Extend
+    });
+
+    /* Locking Native Objects */
+    foreach(['__extend__', 'xObject', 'xArray'], function(key) {
+        lock(key);
+    });
+    foreach(natives, function(key) {
+        lock(key);
     });
 })();
 
