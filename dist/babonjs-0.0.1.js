@@ -1417,15 +1417,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
             return this._constructor.func.apply(new Generator(), arguments);
         },
-        build: function() {
-            var automator = Automator(this._constructor.id);
-
-            if (isAutomator(automator)) {
-                automator.build(this.html);
-            }
-
-            return this;
-        },
         remove: function() {
             if (isGenerator(GeneratorMaps.generator[this._constructor.id])) {
                 /* Deleting Automator if exist */
@@ -1446,6 +1437,15 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
 
     var defaultModules = {
+        build: function() {
+            var automator = Automator(this._constructor.id);
+
+            if (isAutomator(automator)) {
+                automator.build(this.html);
+            }
+
+            return this;
+        },
         appendTo: function() {
             this.html.appendTo(arguments);
 
