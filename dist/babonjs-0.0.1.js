@@ -1496,7 +1496,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
         if (isGenerator(master)) {
             reconstructor.call(into, from);
-            master.constructor.func.apply(into, args);
+            master._constructor.func.apply(into, args);
         }
 
         return this;
