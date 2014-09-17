@@ -400,14 +400,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         xArray: function(ARRAY) {return new xArray(ARRAY)},
         __extend__: Extend
     });
-
-    /* Locking Native Objects */
-    foreach(['__extend__', 'xObject', 'xArray'], function(key) {
-        lock(key);
-    });
-    foreach(natives, function(key) {
-        lock(key);
-    });
 })();
 
 
