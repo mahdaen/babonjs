@@ -89,7 +89,7 @@
             return typeof obj === 'object' && obj.indexOf === undefined && !obj.constructor.prototype.hasOwnProperty('splice') ? true : false;
         },
         isArray: function(obj) {
-            return Array.isArray(obj) || obj.constructor.prototype.hasOwnProperty('splice') && !isJQuery(obj) ? true : false;
+            return Array.isArray(obj) || obj.splice !== 'undefined' && !isJQuery(obj) ? true : false;
         },
         isFunction: function(obj) {
             return typeof obj === 'function' ? true : false;
