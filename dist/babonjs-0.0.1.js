@@ -157,6 +157,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                             func(key, object[key]);
                         }
                     }
+                } else if (isNumber(object) && isFunction(func)) {
+                    for (var i = 0; i < object; ++i) {
+                        func(i);
+                    }
                 } else {
                     return console.error('Invalid arguments!');
                 }
