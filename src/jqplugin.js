@@ -1,5 +1,29 @@
 /* BABONKIT JQUERY PLUGINS */
 (function ($) {
+    'use strict';
+
+    // Box Ratio Counter.
+    var countRatio = function (width, height) {
+        var getDivisor, temp, divisor;
+
+        getDivisor = function(a, b) {
+            if (b === 0) return a;
+            return getDivisor(b, a % b);
+        }
+
+        if (width === height) return '1,1';
+
+        if (+width < +height) {
+            temp = width;
+            width = height;
+            height = temp;
+        }
+
+        divisor = getDivisor(+width, +height);
+
+        return 'undefined' === typeof temp ? (width / divisor) + ',' + (height / divisor) : (height / divisor) + ',' + (width / divisor);
+    };
+
     /* DATA KITS */
     $.fn.hasAttr = function(name) {
         if (this.length < 1) return false;
@@ -33,13 +57,21 @@
             var data = this.attr('data-' + name);
 
             if (data) {
-                if (data.search(/(\:)/) > -1) {
+                if (data.search(/(\:)/) > -1 && data.search(/\(/)){
                     try {
                         data = JSON.parse(data);
                     } catch (e) {
                         try {
                             eval('data = {' + data + '}');
-                        } catch (e) {}
+                        } catch (e) {
+                            try {
+                                eval('data = ' + data);
+                            } catch (e) {
+                                try {
+                                    data = eval(data);
+                                } catch (e) {}
+                            }
+                        }
                     }
                 } else if (data.search(',') > -1) {
                     data = data.replace(/\s?,\s?/g, ',').split(',');
@@ -203,7 +235,7 @@
                 var width = $(this).width();
                 var height = $(this).height();
 
-                ratio = func('box:count-ratio')(width, height).split(',');
+                ratio = countRatio(width, height).split(',');
 
                 $(this).setData('box-ratio', ratio);
             }
@@ -231,4 +263,43 @@
         
         return this;
     };
+
+    // Css Object Getter.
+    $.fn.style = function() {
+        var style = this.attr('style').replace(/\s+\;/g, ';');
+        var stlis = {};
+
+        style = style.split(';');
+
+        for (var i = 0; i < style.length; ++i) {
+            var next = style[i];
+
+
+            if (typeof next === 'string' && next.length > 0) {
+                next = next.replace(/\:\s+/g, ':').split(':');
+                var key = next[0].replace(/\s+/g, '');
+
+                stlis[key] = next[1];
+            }
+        }
+
+        return stlis;
+    };
+
+    // Create Selection.
+    $.fn.focusTo = function(start, end) {
+        return this.each(function() {
+            if (this.setSelectionRange) {
+                this.focus();
+                this.setSelectionRange(start, end);
+            } else if (this.createTextRange) {
+                var range = this.createTextRange();
+                range.collapse(true);
+                range.moveEnd('character', end);
+                range.moveStart('character', start);
+                range.select();
+            }
+        });
+    };
+
 })(jQuery);

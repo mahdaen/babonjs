@@ -14,7 +14,6 @@
     } else {
         /* Browser */
         window.Automator = automator();
-        lock('Automator');
     }
 }(function() {
     /* Escape when no jQuery defined */
@@ -58,32 +57,34 @@
                         this._constructor.id = name;
                         this._constructor.func = builder;
 
-                        this.auto = false;
+                        this.auto = true;
                         this.dont = [];
                         this._constructor.hand = {};
 
                         this._constructor.type = 'automator';
 
+                        /* Reconfiguring Autobuild if defined and adding to Autobuild map */
                         if (isBoolean(auto)) {
                             this.auto = auto;
-
-                            if (auto === true) {
-                                AutomatorMaps.prebuilds.push(name);
-                            }
                         }
 
-                        /* Locking constructor name */
-                        lock('_constructor', this);
-                        lock(['id', 'func', 'type'], this._constructor);
+                        if (this.auto === true) {
+                            AutomatorMaps.prebuilds.push(name);
+                        }
 
                         return this;
                     };
 
-                    Automator.prototype = defaultModules;
+                    Automator.prototype = {};
 
+                    /* Adding Default Prototypes */
+                    foreach(defaultModules, function(name, func) {
+                        Automator.prototype[name] = func;
+                    });
+
+                    /* Adding Builder Prototypes */
                     foreach(builder.prototype, function(name, func) {
                         Automator.prototype[name] = func;
-                        lock(name, Automator.prototype);
                     });
 
                     /* Adding new automator to map */
@@ -121,6 +122,9 @@
          * @returns {Automator}
          */
         build: function() {
+            /* Escape if disabled */
+            if (this.enabled() === false) return this;
+
             /* Check the escape collection before build */
             if (this.dont.length > 0) {
                 for (var i = 0; i <= this.dont.length; ++i) {
@@ -163,11 +167,14 @@
          */
         escape: function(args) {
             if (isFunction(args)) {
+                /* Push new escape handler to automator */
                 this.dont.push(args);
             } else if (isArray(args)) {
+                /* Iterate escape handler list if args is array */
                 var parent = this;
 
                 foreach(args, function (func) {
+                    /* Proceed Only if func is function */
                     if (isFunction(func)) {
                         parent.dont.push(func);
                     }
@@ -189,6 +196,8 @@
                     AutomatorMaps.prebuilds[idx] = undefined;
             } else if (bool === true && idx === -1) {
                 AutomatorMaps.prebuilds.push(this._constructor.id);
+            } else if (bool === true && idx > -1) {
+                AutomatorMaps.prebuilds[idx] = this._constructor.id;
             }
 
             this.auto = bool;
@@ -255,11 +264,6 @@
     };
     automator.module = Automator.prototype = defaultModules;
 
-    /* Locking prototypes */
-    foreach(automator.module, function(key) {
-        lock(key, automator.module);
-    });
-
     /* Binding auto-builder to the window on-ready */
     $(document).ready(function() {
         foreach(AutomatorMaps.prebuilds, function (name) {
@@ -279,6 +283,10 @@
             if (AutomatorMaps.disableds.indexOf(name) === -1) {
                 AutomatorMaps.disableds.push(name);
             }
+        } else if (isArray(name)) {
+            foreach(name, function (obj) {
+                automator.disable(obj);
+            });
         }
 
         return name;
@@ -296,6 +304,10 @@
             if (idx > -1) {
                 AutomatorMaps.disableds[idx] = undefined;
             }
+        } else if (isArray(name)) {
+            foreach(name, function (obj) {
+                automator.enable(obj);
+            });
         }
 
         return name;
@@ -306,6 +318,7 @@
      * @returns {Array}
      */
     automator.list = Object.keys(AutomatorMaps.automator);
+    automator.maps = AutomatorMaps;
 
     /**
      * Core Automator Generator. Use it when you want to create automator and need to add your own prototypes.

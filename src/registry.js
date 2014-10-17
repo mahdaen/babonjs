@@ -48,8 +48,6 @@
                         AppReg[name] = this;
                     }
                 }
-
-                lock('_constructor', this);
             } else {
                 if (typeof AppReg[name] !== 'undefined') {
                     return AppReg[name];
@@ -75,10 +73,6 @@
             return this;
         }
     };
-
-    foreach(Registry.prototype, function (name) {
-        lock(name, Registry.prototype);
-    });
 
     return function(name, value, option) {
         return new Registry(name, value, option);

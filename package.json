@@ -1,18 +1,17 @@
 {
-    "name": "babonjs",
-    "version": "0.0.1",
-    "description": "Just another Javascript Library.",
-    "readme": "readme.md",
-
-    "repository": [
-        "https://github.com/mahdaen/babonjs",
-        "https://gitlab.com/babonkit/babonjs"
-    ],
-
-    "dependencies": {
-        "grunt": "*",
-        "grunt-contrib-concat": "*",
-        "grunt-contrib-watch": "*",
-        "grunt-contrib-uglify": "*"
-    }
+  "name": "babonjs",
+  "version": "0.0.1",
+  "description": "Just another Javascript Library.",
+  "readme": "readme.md",
+  "repository": [
+    "https://github.com/mahdaen/babonjs",
+    "https://gitlab.com/babonkit/babonjs"
+  ],
+  "dependencies": {
+    "grunt": "*",
+    "grunt-contrib-concat": "*",
+    "grunt-contrib-uglify": "*",
+    "grunt-contrib-watch": "*",
+    "swig": "^1.4.2"
+  }
 }

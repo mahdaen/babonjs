@@ -14,9 +14,10 @@
     } else {
         /* Browser */
         window.Generator = generator();
-        lock('Generator');
     }
 }(function () {
+    'use strict';
+
     /* Creating jQuery Wrapper */
     $ = jQuery;
 
@@ -81,11 +82,6 @@
                         this._constructor.fluid = false;
                     }
 
-                    /* Locking and hiding properties */
-                    lock('_constructor', this);
-                    lock(['id', 'type', 'fluid'], this._constructor);
-                    hide(['locked', 'unlock', 'func'], this._constructor);
-
                     /* Updating Generator Lists */
                     generator.list = Object.keys(GeneratorMaps.generator);
                 } else {
@@ -108,13 +104,17 @@
      * @type {{}}
      */
     generator.module = Generator.prototype = {
+        /**
+         * Making new object from kit.
+         * @param {} - Parametes is depending on whats the kit needs.
+         * @return {*}
+         */
         make: function() {
             var mst = this;
             var cst = this._constructor;
 
             var Generator = function() {
                 this._constructor = cst;
-                lock('_constructor', this);
 
                 for(var key in mst) {
                     if (mst.hasOwnProperty(key)) {
@@ -125,16 +125,23 @@
                 return this;
             };
 
-            Generator.prototype = defaultModules;
-            foreach(this._constructor.func.prototype, function(name, func) {
+            Generator.prototype = {};
+
+            foreach(defaultModules, function(name, func) {
                 Generator.prototype[name] = func;
             });
-            foreach(Generator.prototype, function(name, func) {
-                lock(name, Generator.prototype);
+
+            foreach(this._constructor.func.prototype, function(name, func) {
+                Generator.prototype[name] = func;
             });
 
             return this._constructor.func.apply(new Generator(), arguments);
         },
+
+        /**
+         * Removing generator.
+         * @return {*}
+         */
         remove: function() {
             if (isGenerator(GeneratorMaps.generator[this._constructor.id])) {
                 /* Deleting Automator if exist */
@@ -195,11 +202,6 @@
             return this;
         }
     };
-
-    /* Locking prototypes if possible */
-    foreach(generator.module, function(key) {
-        lock(key, generator.module);
-    });
 
     var reconstructor = function() {
         return this;

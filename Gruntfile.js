@@ -23,8 +23,21 @@ module.exports = function(grunt) {
                         'src/media.js',
 
                         /* Automator Scripts */
-//                        'src/automator/background.automator.js',
-//                        'src/automator/dropdown.automator.js',
+                        'src/automator/accordion.automator.js',
+                        'src/automator/background.automator.js',
+                        'src/automator/box.automator.js',
+                        'src/automator/dropdown.automator.js',
+                        'src/automator/editable.automator.js',
+                        'src/automator/googlemap.automator.js',
+                        'src/automator/image.automator.js',
+                        'src/automator/input-placeholder.automator.js',
+                        'src/automator/slider.automator.js',
+                        'src/automator/tab.automator.js',
+                        'src/automator/toggle-state.automator.js',
+                        'src/automator/content-rotator.automator.js',
+                        'src/automator/virtual-map.automator.js',
+                        'src/automator/placeholder-toggle.automator.js',
+                        'src/automator/wizard.automator.js',
                     ]
                 }
             }
@@ -35,7 +48,7 @@ module.exports = function(grunt) {
                 banner: '/* \n' +
                             '\t <%= pkg.name %> - v<%= pkg.version %> \n' +
                             '\t Included libraries: \n' +
-                            '\t jQuery, Scrollmagic, Greenshock, Enquire. \n' +
+                            '\t jQuery, Enquire. \n' +
                         '*/\n'
             },
             my_target: {

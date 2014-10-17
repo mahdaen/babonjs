@@ -1,18 +1,23 @@
 /**
- * Dynamic Background Automator.
- * Autmatically detect responsive and retina, then set the background dynamically.
- * @responsive {string:pattern} - background.jpg, background.retina.jpg, background.mobile.jpg, background.mobile.retina.jpg, etc.
- * @options - mobile, tablet, retina.
- * @credits - Created by Nanang Mahdaen El Agung.
+ * Background Automator.
  */
+(function($, $d) {
+    'use strict';
 
-(function($, $$, $$$) {
-    /* Setting up registry */
-    Registry('enable-responsive-background', true, {lock: true, key: 'BGD-RSP'});
-    Registry('enable-retina-background', true, {lock: true, key: 'BGD-RTN'});
+    var Config = {
+        responsive: true,
+        retina: true,
+        replace: false
+    };
 
-    var bgAtom = $$('bg:dynamic', function(object, name) {
-        !isJQuery(object) ? object = $$$('bg-dynamic') : object;
+    /**
+     * Dynamic Background Automator.
+     * @param object - jQuery object thats hold background.
+     * @returns {DynamicBackround}
+     * @constructor
+     */
+    var DynamicBackround = function(object) {
+        !isJQuery(object) ? object = $d('bg-dynamic') : object;
 
         object.each(function(idx) {
             var img_src = $(this).getData('bg-dynamic');
@@ -27,7 +32,7 @@
 
                 if (isObject(img_url)) {
                     /* Proccessing Responsive Background */
-                    if (Registry('enable-responsive-background').value == true) {
+                    if (Config.responsive == true) {
                         if (window['is-mobile'] === true) {
                             /* Device is Mobile */
                             new_src = img_url.root + img_url.name + '.mobile.';
@@ -44,7 +49,7 @@
                     }
 
                     /* Proccessing Retina Backround */
-                    if (Registry('enable-retina-background').value == true) {
+                    if (Config.retina == true) {
                         /* Proccess if enabled */
                         if (window['is-retina'] === true) {
                             /* Device is Retina */
@@ -70,17 +75,34 @@
                             target.css('backgroundImage', 'url(' + img_src + ')');
                         }
                     });
+
+                    if (Config.replace === true) {
+                        target.remData('bg-dynamic');
+                    }
                 }
             }
         });
-    })
-        .autobuild(true)
-        .escape(function() {
-            if ($$('bg:dynamic').enabled() === false) {
-                return true;
-            } else {
-                return false;
+
+        return this;
+    };
+    DynamicBackround.prototype = {
+        setup: function(object) {
+            if (isObject(object)) {
+                foreach(object, function (key, value) {
+                    Config[key] = value;
+                });
             }
+
+            return this;
         }
-    );
-})(jQuery, Automator, jQuery.findData);
+    }
+
+    Automator('bg-dynamic', DynamicBackround).autobuild(true).escape(function() {
+        if (Automator('bg-dynamic').enable === false) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+})(jQuery, jQuery.findData);
+

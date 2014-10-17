@@ -3,24 +3,56 @@
     var DataFinder = function(name, value, from) {
         /* If name is string, then pass single query */
         if (isString(name)) {
+            var arName = name.replace(/\s/g, '').split(','), query = '';
+
             /* If value is defined and not object or array, then pass query with value. */
             if (isString(value) || isNumber(value) || isBoolean(value)) {
+                if (arName.length > 1) {
+                    foreach(arName, function(name) {
+                        query += ':hasdata(' + name + ', ' + value + '),';
+                    });
+
+                    query = query.replace(/\,$/, '');
+                } else {
+                    query = ':hasdata(' + name + ', ' + value + ')';
+                }
+
                 /* If from is jquery object or html object, then pass query with value and context */
                 if (isJQuery(from) || isHTML(from)) {
-                    return $(':hasdata(' + name + ', ' + value + ')', from);
+                    return $(query, from);
                 }
                 /* Else if no form defined, then pass query without context */
                 else {
-                    return $(':hasdata(' + name + ', ' + value + ')');
+                    return $(query);
                 }
             }
             /* If value is jquery object or html element, then pass query wihtout value but has a context */
             else if (isJQuery(value) || isHTML(value)) {
-                return $(':hasdata(' + name + ')', value);
+                if (arName.length > 1) {
+                    foreach(arName, function(name) {
+                        query += ':hasdata(' + name + '),';
+                    });
+
+                    query = query.replace(/\,$/, '');
+                } else {
+                    query = ':hasdata(' + name + ')';
+                }
+
+                return $(query, value);
             }
             /* If no value defined, then pass query without value or find element that has a attribute. */
             else {
-                return $(':hasdata(' + name + ')');
+                if (arName.length > 1) {
+                    foreach(arName, function(name) {
+                        query += ':hasdata(' + name + '),';
+                    });
+
+                    query = query.replace(/\,$/, '');
+                } else {
+                    query = ':hasdata(' + name + ')';
+                }
+
+                return $(query);
             }
         }
         /* If name is object, then pass multiple query with value. */

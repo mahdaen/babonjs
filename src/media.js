@@ -21,8 +21,6 @@
     window['is-retina'] = false;
     if (window.devicePixelRatio && window.devicePixelRatio > 1) window['is-retina'] = true;
 
-    hide(['is-mobile', 'is-tablet', 'is-desktop', 'is-retina']);
-
     /* Media Query Worker */
     var _MQ_ = function(query) {
         this.query = '';
