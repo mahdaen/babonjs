@@ -263,6 +263,7 @@
         
         return this;
     };
+    $.fn.orientation = $.fn.direction;
 
     // Css Object Getter.
     $.fn.style = function() {

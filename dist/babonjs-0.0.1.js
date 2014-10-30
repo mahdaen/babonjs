@@ -203,167 +203,9 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             };
         }
     };
+    window.splitURL = window.parseURL;
 
-    /* Creating Babon Object */
-    var xObject = function(obj) {
-        if (isObject(obj)) {
-            var tar = this;
-            foreach(obj, function(key, value) {
-                tar[key] = value;
-            });
-        }
-
-        return this;
-    };
-
-    /* Creating Prototype */
-    xObject.prototype = {
-        keys: function() {
-            return Object.keys(this);
-        },
-        length: function() {
-            return this.keys().length;
-        },
-        sort: function() {
-            var obj = new xObject();
-            var obs = this;
-            var key = this.keys().sort();
-            foreach(key, function(key) {
-                obj[key] = obs[key];
-            });
-
-            return obj;
-        },
-        del: function(key) {
-            if (isString(key) && this.hasOwnProperty(key)) {
-                delete this[key];
-            } else if (isArray(key)) {
-                var obj = this;
-                foreach(key, function(key) {
-                    delete obj[key];
-                });
-            }
-
-            return this;
-        },
-        circle: function(dir) {
-            var keys = this.keys();
-            if (keys.length < 2) return this;
-
-            var objn = new xObject();
-            var objo = this;
-            var skip = 0;
-
-            if (isString(dir) && dir === 'reverse') {
-                skip = (keys.length - 1);
-                var skey = keys[skip];
-                objn[skey] = objo[skey];
-            }
-
-            foreach(keys, function(key, idx) {
-                if (idx !== skip) objn[key] = objo[key];
-            });
-
-            if (!isString(dir)) {
-                var skey = keys[skip];
-                objn[skey] = objo[skey];
-            }
-
-            return objn;
-        },
-        each: function(func) {
-            if (isFunction(func)) {
-                foreach(this, func);
-            }
-
-            return this;
-        }
-    };
-
-    /* Applying Native Object prototypes */
-    foreach(Object.prototype, function(key, value) {
-        xObject.prototype[key] = value;
-    });
-
-    /* Extended Array */
-    var xArray = function(array) {
-        !array ? array = [] : array;
-
-        if (isArray(array)) {
-            var obj = this;
-            foreach(array, function(value, index) {
-                obj.push(value);
-            });
-        }
-        return this;
-    };
-
-    /* Cloning native array prototypes */
-    xArray.prototype = Object.create(Array.prototype);
-
-    /* Creating custom prototypes */
-    var xAProto = {
-        each: function(func) {
-            if (isFunction(func)) {
-                foreach(this, func);
-            }
-
-            return this;
-        },
-        del: function(index) {
-            var on = new xArray();
-            if (isString(index)) {
-                index = this.indexOf(index);
-            }
-            if (isNumber(index)) {
-                var odd = this;
-                foreach(odd, function(val, idx) {
-                    if (idx !== index) {
-                        on.push(val);
-                    }
-                });
-            } else if (isArray(index)) {
-                on = this;
-                foreach(index, function(val, idx) {
-                    on = on.del(val);
-                });
-            }
-
-            return on;
-        },
-        circle: function(dir) {
-            !dir ? dir = 'backward' : dir;
-            var arr = new xArray();
-
-            if (dir === 'backward') {
-                var odd = this;
-                foreach(odd, function(val, idx) {
-                    if (idx !== 0) arr.push(val);
-                });
-                arr.push(this[0]);
-            } else if (dir === 'forward') {
-                var ln = (this.length - 1);
-                arr.push(this[ln]);
-                var odd = this;
-                foreach(odd, function(val, idx) {
-                    if (idx !== ln) arr.push(val);
-                });
-            }
-
-            return arr;
-        }
-    };
-
-    /* Applying custom prototypes */
-    foreach(xAProto, function(key, value) {
-        xArray.prototype[key] = value;
-    });
-
-    Extend({
-        xObject: function(OBJECT) {return new xObject(OBJECT)},
-        xArray: function(ARRAY) {return new xArray(ARRAY)},
-        __extend__: Extend
-    });
+    Extend({ __extend__: Extend });
 })();
 
 /* JQUERY DATA SELECTORS */
@@ -728,6 +570,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         
         return this;
     };
+    $.fn.orientation = $.fn.direction;
 
     // Css Object Getter.
     $.fn.style = function() {
@@ -768,6 +611,228 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
 
 })(jQuery);
+
+/*! Copyright (c) 2013 Brandon Aaron (http://brandon.aaron.sh)
+ * Licensed under the MIT License (LICENSE.txt).
+ *
+ * Version: 3.1.12
+ *
+ * Requires: jQuery 1.2.2+
+ */
+
+(function (factory) {
+    if ( typeof define === 'function' && define.amd ) {
+        // AMD. Register as an anonymous module.
+        define(['jquery'], factory);
+    } else if (typeof exports === 'object') {
+        // Node/CommonJS style for Browserify
+        module.exports = factory;
+    } else {
+        // Browser globals
+        factory(jQuery);
+    }
+}(function ($) {
+
+    var toFix  = ['wheel', 'mousewheel', 'DOMMouseScroll', 'MozMousePixelScroll'],
+        toBind = ( 'onwheel' in document || document.documentMode >= 9 ) ?
+                    ['wheel'] : ['mousewheel', 'DomMouseScroll', 'MozMousePixelScroll'],
+        slice  = Array.prototype.slice,
+        nullLowestDeltaTimeout, lowestDelta;
+
+    if ( $.event.fixHooks ) {
+        for ( var i = toFix.length; i; ) {
+            $.event.fixHooks[ toFix[--i] ] = $.event.mouseHooks;
+        }
+    }
+
+    var special = $.event.special.mousewheel = {
+        version: '3.1.12',
+
+        setup: function() {
+            if ( this.addEventListener ) {
+                for ( var i = toBind.length; i; ) {
+                    this.addEventListener( toBind[--i], handler, false );
+                }
+            } else {
+                this.onmousewheel = handler;
+            }
+            // Store the line height and page height for this particular element
+            $.data(this, 'mousewheel-line-height', special.getLineHeight(this));
+            $.data(this, 'mousewheel-page-height', special.getPageHeight(this));
+        },
+
+        teardown: function() {
+            if ( this.removeEventListener ) {
+                for ( var i = toBind.length; i; ) {
+                    this.removeEventListener( toBind[--i], handler, false );
+                }
+            } else {
+                this.onmousewheel = null;
+            }
+            // Clean up the data we added to the element
+            $.removeData(this, 'mousewheel-line-height');
+            $.removeData(this, 'mousewheel-page-height');
+        },
+
+        getLineHeight: function(elem) {
+            var $elem = $(elem),
+                $parent = $elem['offsetParent' in $.fn ? 'offsetParent' : 'parent']();
+            if (!$parent.length) {
+                $parent = $('body');
+            }
+            return parseInt($parent.css('fontSize'), 10) || parseInt($elem.css('fontSize'), 10) || 16;
+        },
+
+        getPageHeight: function(elem) {
+            return $(elem).height();
+        },
+
+        settings: {
+            adjustOldDeltas: true, // see shouldAdjustOldDeltas() below
+            normalizeOffset: true  // calls getBoundingClientRect for each event
+        }
+    };
+
+    $.fn.extend({
+        mousewheel: function(fn) {
+            return fn ? this.bind('mousewheel', fn) : this.trigger('mousewheel');
+        },
+
+        unmousewheel: function(fn) {
+            return this.unbind('mousewheel', fn);
+        }
+    });
+
+
+    function handler(event) {
+        var orgEvent   = event || window.event,
+            args       = slice.call(arguments, 1),
+            delta      = 0,
+            deltaX     = 0,
+            deltaY     = 0,
+            absDelta   = 0,
+            offsetX    = 0,
+            offsetY    = 0;
+        event = $.event.fix(orgEvent);
+        event.type = 'mousewheel';
+
+        // Old school scrollwheel delta
+        if ( 'detail'      in orgEvent ) { deltaY = orgEvent.detail * -1;      }
+        if ( 'wheelDelta'  in orgEvent ) { deltaY = orgEvent.wheelDelta;       }
+        if ( 'wheelDeltaY' in orgEvent ) { deltaY = orgEvent.wheelDeltaY;      }
+        if ( 'wheelDeltaX' in orgEvent ) { deltaX = orgEvent.wheelDeltaX * -1; }
+
+        // Firefox < 17 horizontal scrolling related to DOMMouseScroll event
+        if ( 'axis' in orgEvent && orgEvent.axis === orgEvent.HORIZONTAL_AXIS ) {
+            deltaX = deltaY * -1;
+            deltaY = 0;
+        }
+
+        // Set delta to be deltaY or deltaX if deltaY is 0 for backwards compatabilitiy
+        delta = deltaY === 0 ? deltaX : deltaY;
+
+        // New school wheel delta (wheel event)
+        if ( 'deltaY' in orgEvent ) {
+            deltaY = orgEvent.deltaY * -1;
+            delta  = deltaY;
+        }
+        if ( 'deltaX' in orgEvent ) {
+            deltaX = orgEvent.deltaX;
+            if ( deltaY === 0 ) { delta  = deltaX * -1; }
+        }
+
+        // No change actually happened, no reason to go any further
+        if ( deltaY === 0 && deltaX === 0 ) { return; }
+
+        // Need to convert lines and pages to pixels if we aren't already in pixels
+        // There are three delta modes:
+        //   * deltaMode 0 is by pixels, nothing to do
+        //   * deltaMode 1 is by lines
+        //   * deltaMode 2 is by pages
+        if ( orgEvent.deltaMode === 1 ) {
+            var lineHeight = $.data(this, 'mousewheel-line-height');
+            delta  *= lineHeight;
+            deltaY *= lineHeight;
+            deltaX *= lineHeight;
+        } else if ( orgEvent.deltaMode === 2 ) {
+            var pageHeight = $.data(this, 'mousewheel-page-height');
+            delta  *= pageHeight;
+            deltaY *= pageHeight;
+            deltaX *= pageHeight;
+        }
+
+        // Store lowest absolute delta to normalize the delta values
+        absDelta = Math.max( Math.abs(deltaY), Math.abs(deltaX) );
+
+        if ( !lowestDelta || absDelta < lowestDelta ) {
+            lowestDelta = absDelta;
+
+            // Adjust older deltas if necessary
+            if ( shouldAdjustOldDeltas(orgEvent, absDelta) ) {
+                lowestDelta /= 40;
+            }
+        }
+
+        // Adjust older deltas if necessary
+        if ( shouldAdjustOldDeltas(orgEvent, absDelta) ) {
+            // Divide all the things by 40!
+            delta  /= 40;
+            deltaX /= 40;
+            deltaY /= 40;
+        }
+
+        // Get a whole, normalized value for the deltas
+        delta  = Math[ delta  >= 1 ? 'floor' : 'ceil' ](delta  / lowestDelta);
+        deltaX = Math[ deltaX >= 1 ? 'floor' : 'ceil' ](deltaX / lowestDelta);
+        deltaY = Math[ deltaY >= 1 ? 'floor' : 'ceil' ](deltaY / lowestDelta);
+
+        // Normalise offsetX and offsetY properties
+        if ( special.settings.normalizeOffset && this.getBoundingClientRect ) {
+            var boundingRect = this.getBoundingClientRect();
+            offsetX = event.clientX - boundingRect.left;
+            offsetY = event.clientY - boundingRect.top;
+        }
+
+        // Add information to the event object
+        event.deltaX = deltaX;
+        event.deltaY = deltaY;
+        event.deltaFactor = lowestDelta;
+        event.offsetX = offsetX;
+        event.offsetY = offsetY;
+        // Go ahead and set deltaMode to 0 since we converted to pixels
+        // Although this is a little odd since we overwrite the deltaX/Y
+        // properties with normalized deltas.
+        event.deltaMode = 0;
+
+        // Add event and delta to the front of the arguments
+        args.unshift(event, delta, deltaX, deltaY);
+
+        // Clearout lowestDelta after sometime to better
+        // handle multiple device types that give different
+        // a different lowestDelta
+        // Ex: trackpad = 3 and mouse wheel = 120
+        if (nullLowestDeltaTimeout) { clearTimeout(nullLowestDeltaTimeout); }
+        nullLowestDeltaTimeout = setTimeout(nullLowestDelta, 200);
+
+        return ($.event.dispatch || $.event.handle).apply(this, args);
+    }
+
+    function nullLowestDelta() {
+        lowestDelta = null;
+    }
+
+    function shouldAdjustOldDeltas(orgEvent, absDelta) {
+        // If this is an older event and the delta is divisable by 120,
+        // then we are assuming that the browser is treating this as an
+        // older mouse wheel event and that we should divide the deltas
+        // by 40 to try and get a more usable deltaFactor.
+        // Side note, this actually impacts the reported scroll distance
+        // in older browsers and can cause scrolling to be slower than native.
+        // Turn this off by setting $.event.special.mousewheel.settings.adjustOldDeltas to false.
+        return special.settings.adjustOldDeltas && orgEvent.type === 'mousewheel' && absDelta % 120 === 0;
+    }
+
+}));
 
 /* Native Tools */
 (function() {
@@ -1887,6 +1952,116 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 })(jQuery, jQuery.findData);
 
 /**
+ * BabonJS.
+ * ContentStack Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 10/30/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name.
+    var AutomatorName = 'accordion';
+
+    // Automator Configurations.
+    var Config = {
+        counter: 0,
+        IDPrefix: 'accordion-',
+        allowReconfigure: false,
+
+        // Attributes Naming.
+        data: {
+            Kit: 'accordion',
+            KitID: 'accordion-id',
+            KitState: 'ac-item-state'
+        },
+
+        /* Kit Collections */
+        object: {},
+
+        /* Effect Collections */
+        effect: {}
+    };
+
+    // ContentStack object.
+    var ContentStack = function () {
+        this.config = {
+            effect: 'default'
+        };
+        this.holder = $('<div>');
+
+        return this;
+    };
+
+    // ContentStack Object Prototypes.
+    ContentStack.prototype = {
+        // Change or add Kit properties.
+        set: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                var self = this;
+
+                foreach(name, function (name, value) {
+                    self[name] = value;
+                });
+            }
+
+            return this;
+        },
+    };
+
+    // Automator Constructor.
+    var contentStack = function (object) {
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d(Config.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d(Config.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + Config.data.Kit + ')');
+
+        // Iterating Objects.
+        object.each(function () {
+
+        });
+
+        return this;
+    };
+
+    // Automator Prototypes.
+    contentStack.prototype = {
+        // Configuring Automator.
+        setup: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    Config[name] = value;
+                });
+            } else {
+                return Config;
+            }
+
+            return this;
+        },
+
+        // Selecting Kit Object by KitID.
+        with: function (name) {
+            if (Config.object.hasOwnProperty(name)) {
+                return Config.object[name];
+            }
+        },
+    };
+
+    // Registering Automator including autobuild and default escape condition.
+    Automator(AutomatorName, contentStack);
+})(jQuery, jQuery.findData);
+
+/**
  * Background Automator.
  */
 (function($, $d) {
@@ -2158,6 +2333,450 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     }
 })(jQuery, jQuery.findData);
 
+
+/**
+ * Citraland Megah Batam.
+ * Content Rotator Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 10/13/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name Variable.
+    var AutomatorName = 'content-rotator';
+
+    // Rotator Main Configuration.
+    var Config = {
+        counter: 0,
+        IDPrefix: 'rotator-',
+        allowReconfigure: false,
+
+        // Constructor Naming.
+        data: {
+            // HTML Data Attributes Naming.
+            Kit: 'content-rotator',
+            KitID: 'content-rotator-id',
+            KitConfigured: 'content-rotator-configured',
+
+            Item: 'content-rotator-item',
+            ItemID: 'content-rotator-item-id',
+            ItemState: 'content-rotator-item-state',
+
+            Prev: 'content-rotator-prev',
+            Next: 'content-rotator-next',
+            Select: 'content-rotator-select',
+
+            Progress: 'content-rotator-progress',
+
+            // Data State Naming.
+            ItemActive: 'active',
+
+            ProgressStopped: 'stopped',
+            ProgressPaused: 'paused',
+
+            NavigateNext: 'forward',
+            NavigatePrev: 'backward'
+        },
+
+        rotator: {},
+        animator: {
+            default: function() {
+                this.swap();
+            },
+            fade: function() {
+                var self = this;
+
+                self.active.fadeOut();
+                self.target.fadeIn();
+
+                self.swap();
+            }
+        }
+    };
+
+    // Rotator Object.
+    var ContentRotator = function() {
+        // Rotator Object Configuration.
+        this.config = {
+            // Auto rotate Items.
+            auto: false,
+
+            // Animation Name.
+            animationName: 'default',
+
+            // Animation Speed.
+            animationSpeed: 0
+        };
+
+        // Attributes Naming.
+        this.cons = Config.data;
+
+        // Creating temporary holder.
+        this.holder = $('<div>');
+
+        return this;
+    };
+
+    // Rotator Prototypes.
+    ContentRotator.prototype = {
+        navigate: function(direction) {
+            var next = 0;
+
+            if (isString(direction)) {
+                // Handle for next and prev navigation.
+                if (direction === Config.data.NavigateNext) {
+                    if (this.current === this.total) {
+                        next = 1;
+                    } else {
+                        next = (this.current + 1);
+                    }
+                } else if (direction === Config.data.NavigatePrev) {
+                    if (this.current === 1) {
+                        next = this.total;
+                    } else {
+                        next = (this.current - 1);
+                    }
+                } else {
+                    return this;
+                }
+
+                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + next + ')');
+                this.current = next;
+            } else if (isNumber(direction) && direction >= 1 && direction <= this.total) {
+                // Handle for index specific navigation.
+                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + direction + ')');
+                this.current = direction;
+            }
+
+            // Animating Items.
+            this.animate();
+
+            return this;
+        },
+        animate: function() {
+            var anim = this.config.animationName;
+
+            if (Config.animator.hasOwnProperty(anim) && isFunction(Config.animator[anim])) {
+                Config.animator[anim].apply(this);
+            } else {
+                this.swap();
+            }
+
+            return this;
+        },
+        swap: function() {
+            // Deactivating Active Item.
+            this.active.removeClass(Config.data.ItemActive).remData(Config.data.ItemState);
+
+            // Activating Target Item.
+            this.target.addClass(Config.data.ItemActive).setData(Config.data.ItemState, Config.data.ItemActive);
+
+            // Replacing active item with target item.
+            this.active = this.target;
+
+            // Starting auto rotate content.
+            if (isNumber(this.config.auto)) {
+                this.restart();
+            }
+
+            return this;
+        },
+        start: function() {
+            var duration = (this.config.auto * 1000),
+                w = this.progress.width();
+
+            if (w > 0) {
+                var style = this.progress.style(),
+                    width = Number(style.width.replace('%', ''));
+
+                duration = duration - ((width / 100) * duration);
+            }
+
+            this.progress.removeClass(Config.data.ProgressStopped).animate({
+                width: '100%'
+            }, duration, function() {
+                // Getting Rotator ID and Resetting Width.
+                var rt_id = $(this).css({ width: 0 }).getData(Config.data.KitID);
+
+                Automator(AutomatorName).with(rt_id).navigate(Config.data.NavigateNext);
+            });
+
+            return this;
+        },
+        restart: function() {
+            this.stop();
+            this.start();
+
+            return this;
+        },
+        stop: function() {
+            this.progress.stop().addClass(Config.data.ProgressStopped).width(0);
+
+            return this;
+        },
+        pause: function() {
+            this.progress.stop().addClass(Config.data.ProgressPaused);
+
+            return this;
+        },
+        set: function(key, value) {
+            if (isString(key)) {
+                if (value) this[key] = value;
+            } else if (isObject(key)) {
+                var self = this;
+
+                foreach(key, function (key, value) {
+                    self[key] = value;
+                });
+            }
+
+            return this;
+        }
+    };
+
+    /**
+     * Content Rotator Automator Constructor.
+     * @param object - jQuery object that has attribute 'data-rotator-kit'.
+     * @required htmlTag - 'data-rotator-kit' as holder, 'data-rotator-item' as rotator item, 'data-rotator-select' as selector, 'data-rotator-next' as navigate forward, 'data-rotator-prev' as navigate backward.
+     * @config data-object - 'auto' with number duration, 'animationName' for custom animation, 'animationSpeed' for custom animation speed. Sample: `data-rotator-kit="auto: 5000, animationName: 'fade', animationSpeed: 1000"`.
+     * @returns {contentRotator}
+     * @constructor
+     */
+    var contentRotator = function (object) {
+        !isJQuery(object) ? object = $d(Config.data.Kit) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + Config.data.Kit + ')');
+
+        // Initializing Rotator.
+        object.each(function() {
+            // Check if already configured and skip if not allowed.
+            if (Config.allowReconfigure === false && $(this).getData(Config.data.KitConfigured) === true) return;
+
+            // Creating Rotator ID if not defined.
+            var rt_id = $(this).getData(Config.data.KitID);
+
+            if (!isString(rt_id)) {
+                rt_id = Config.IDPrefix + (Config.counter + 1);
+
+                // Applying Rotator ID to Rotator Holder.
+                $(this).setData(Config.data.KitID, rt_id);
+            }
+
+            // Creating Rotator Object.
+            var rotator = new ContentRotator().set('holder', $(this));
+
+            // Getting Rotator Config.
+            var config = $(this).getData(Config.data.Kit);
+
+            // Apllying rotator object config.
+            if (isObject(config)) {
+                foreach(config, function (key, value) {
+                    rotator.config[key] = value;
+                });
+            }
+
+            // Getting Rotator Items.
+            var items = $d(Config.data.Item, this).setData(Config.data.KitID, rt_id);
+
+            // Getting Rotator Selector.
+            var select = $d(Config.data.Select, this).setData(Config.data.KitID, rt_id);
+
+            // Getting Rotator Navigator and Binding Click Function.
+            var prev = $d(Config.data.Prev, this).setData(Config.data.KitID, rt_id).click(function(e) {
+                e.stopPropagation();
+
+                rotator.navigate(Config.data.NavigatePrev);
+
+                return false;
+            });
+            var next = $d(Config.data.Next, this).setData(Config.data.KitID, rt_id).click(function(e) {
+                e.stopPropagation();
+
+                rotator.navigate(Config.data.NavigateNext);
+
+                return false;
+            });
+
+            // Adding navigator to Rotator Object.
+            rotator.set({
+                'nav_prev': prev,
+                'nav_next': next
+            });
+
+            // Creating Rotator Progress Controll if not exist.
+            var prog = $d(Config.data.Progress, this).setData(Config.data.KitID, rt_id);
+
+            var progressQuery = {};
+            progressQuery[Config.data.Progress] = '';
+            progressQuery[Config.data.KitID] = rt_id;
+
+            if (prog.length < 1) {
+                prog = $('<div>').setData(progressQuery).addClass(Config.data.Progress).css({ width: 0, position: 'absolute' }).prependTo(this);
+            }
+
+            // Adding Progress to Rotator Object.
+            rotator.set('progress', prog);
+
+            // Adding Rotator Object to list.
+            Config.rotator[rt_id] = rotator;
+
+            // Increasing Counter.
+            Config.counter++;
+        });
+
+        // Reinitializing Rotator to prevent wrong items index number for rotator inside rotator.
+        foreach(Config.rotator, function (rt_id, rotator) {
+            // Checking if already configured and determine does it should be reconfigured or not.
+            if (Config.allowReconfigure === false && rotator.holder.getData(Config.data.KitConfigured) === true) {
+                return;
+            } else {
+                rotator.holder.setData(Config.data.KitConfigured, true);
+            }
+
+            // Temporary Default Item.
+            var default_item;
+            var default_select = 0;
+
+            // Initializing Rotator Items.
+            var itemQuery = {};
+            itemQuery[Config.data.Item] = '?';
+            itemQuery[Config.data.KitID] = rt_id;
+
+            var items = $d(itemQuery).each(function(index) {
+                // Applying Item Index ID.
+                $(this).setData(Config.data.ItemID, (index + 1));
+
+                // Setting first item as default activated item.
+                if (index === 0) {
+                    default_item = $(this);
+                    default_select = 0;
+                    rotator.current = 1;
+                    rotator.active = $(this);
+                }
+
+                // If this is default, then replace the first activated item with this.
+                if ($(this).getData(Config.data.Item) === 'default') {
+                    default_item = $(this);
+                    default_select = index;
+                    rotator.current = (index + 1);
+                    rotator.active = $(this);
+                }
+            });
+
+            // Activating Default Item.
+            default_item.setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
+
+            // Initializing Rotator Selectors.
+            var selectorQuery = {};
+            selectorQuery[Config.data.Select] = '?';
+            selectorQuery[Config.data.KitID] = rt_id;
+
+            var selects = $d(selectorQuery).each(function(index) {
+                // Applying Item Index ID.
+                $(this).setData(Config.data.ItemID, (index + 1));
+
+                // Activating Default Select.
+                if (index === default_select) {
+                    $(this).setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
+                }
+
+                // Biding Click Function.
+                $(this).click(function(e) {
+                    e.stopPropagation();
+
+                    var rt_id = $(this).getData(Config.data.KitID);
+                    var index = $(this).getData(Config.data.ItemID);
+
+                    if (isString(rt_id) && isNumber(index)) {
+                        rotator.navigate(index);
+                    }
+
+                    return false;
+                });
+            });
+
+            // Adding Rotator Items and Selects to Rotator Object.
+            if (items.length > 0) {
+                rotator.set({ 'items': items, total: items.length });
+            }
+            if (selects.length > 0) {
+                rotator.set('selects', selects);
+            }
+        });
+
+        // Initializing Auto Rotate.
+        foreach(Config.rotator, function (name, rotator) {
+            if (isNumber(rotator.config.auto)) {
+                rotator.start();
+            }
+        });
+
+        return this;
+    };
+
+    // Automator Prototypes.
+    contentRotator.prototype = {
+        addAnimation: function(animationName, func) {
+            if (isString(animationName) && isFunction(func)) {
+                Config.animator[animationName] = func;
+            } else if (isObject(animationName)) {
+                foreach(animationName, function (name, func) {
+                    if (isFunction(func)) {
+                        Config.animator[name] = func;
+                    }
+                });
+            }
+
+            return this;
+        },
+        with: function(rotator_id) {
+            if (isString(rotator_id)) {
+                if (Config.rotator[rotator_id]) {
+                    return Config.rotator[rotator_id];
+                }
+            }
+
+            return this;
+        },
+        setup: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (configName, value) {
+                    Config[configName] = value;
+                });
+            } else {
+                return Config;
+            }
+
+            return this;
+        },
+        construct: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config.data[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (configName, value) {
+                    Config.data[configName] = value;
+                });
+            }
+
+            return this;
+        }
+    };
+
+    // Registering Automator including autobuild and default escape condition.
+    Automator(AutomatorName, contentRotator).autobuild(true).escape(function () {
+        if (Automator(AutomatorName).enabled === false) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+})(jQuery, jQuery.findData);
 
 (function($, $d) {
     'use strict';
@@ -3299,6 +3918,302 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
 })(jQuery, jQuery.findData);
 
+/**
+ * BabonJS.
+ * LinkScroller Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 10/29/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function($, $d) {
+    'use strict';
+
+    var AutomatorName = 'link-scroller';
+
+    var Config = {
+        counter: 0,
+        IDPrefix: 'link-scroller-',
+
+        data: {
+            kit: 'link-scroller'
+        },
+
+        stopPos: 0,
+        independent: true,
+
+        kit: {},
+    }
+
+    var linkScroller = function(object) {
+        !isJQuery(object) ? object = $d(Config.data.kit) : object;
+
+        object = object.filter(':hasdata(' + Config.data.kit + ')');
+
+        object.each(function() {
+            /* Getting Target ID */
+            var target = $(this).getData(Config.data.kit);
+
+            /* Getting Scroll Effect */
+            var scrollEffect = $(this).getData('link-scroll-effect');
+            if (!isString(scrollEffect)) {
+                scrollEffect = 'default';
+            }
+
+            /* Getting Target */
+            var linkTarget = $(target);
+
+            if (linkTarget.length > 0) {
+                /* Getting Offset */
+                var top = linkTarget.offsets().top;
+
+
+                $(this).click(function(e) {
+                    if (Config.independent) {
+                        e.stopPropagation();
+                    }
+
+                    var range = (top - Config.stopPos);
+
+                    Automator('scroll-pos').scrollTop(range, scrollEffect);
+
+                    if (Config.independent) {
+                        return false;
+                    }
+                });
+            }
+        });
+    };
+
+    /* Kit Prototype */
+    linkScroller.prototype = {
+        addEffect: function(name, func) {
+            Automator('scroll-pos').addScrollEffect(name, func);
+
+            return this;
+        },
+        setup: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    Config[name] = value;
+                });
+            }
+
+            return this;
+        }
+    };
+
+    /* Registering Automator */
+    Automator(AutomatorName, linkScroller);
+})(jQuery, jQuery.findData);
+/**
+ * BabonJS.
+ * LazyLoader Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 10/30/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name.
+    var AutomatorName = 'lazy-loader';
+
+    // Automator Configurations.
+    var Config = {
+        counter: 0,
+        IDPrefix: 'lazy-loader-',
+        clean: true,
+
+        // Attributes Naming.
+        data: {
+            Kit: 'lazy-loader',
+            KitID: 'lazy-loader-id',
+            KitState: 'lazy-loader-state'
+        },
+
+        loadtime: 'load',
+
+        // Object Collections.
+        object: {},
+
+        // Effect Collections.
+        effect: {
+            default: function() {
+                this.loaded = true;
+                this.holder.addClass(this.config.loadclass);
+
+                if (Config.clean === false) {
+                    this.holder.setData(Config.data.KitState, this.config.loadclass);
+                }
+
+                return this;
+            }
+        }
+    };
+
+    // LazyLoader object.
+    var LazyLoader = function () {
+        this.config = {
+            delay: 0,
+            loadtime: 'winload',
+            effect: 'default',
+            loadclass: 'loaded'
+        };
+        this.timeHanlder = setTimeout(function() {}, 0);
+        this.holder = $('<div>');
+
+        return this;
+    };
+
+    // LazyLoader Object Prototypes.
+    LazyLoader.prototype = {
+        // Change or add Kit properties.
+        set: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                var self = this;
+
+                foreach(name, function (name, value) {
+                    self[name] = value;
+                });
+            }
+
+            return this;
+        },
+    };
+
+    // Automator Constructor.
+    var lazyLoader = function (object) {
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d(Config.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d(Config.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + Config.data.Kit + ')');
+
+        // Iterating Objects.
+        object.each(function () {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData(Config.data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = Config.IDPrefix + (Config.counter + 1);
+
+                /* Increasing Counter */
+                Config.counter++;
+            }
+
+            /* Creating New Kit */
+            var Kit = new LazyLoader().set({ id: kit_id, holder: $(this).setData(Config.data.KitID, kit_id) });
+
+            /* Geting Configurations */
+            var config = Kit.holder.getData(Config.data.Kit);
+            if (isObject(config)) {
+                foreach(config, function (key, value) {
+                    Kit.config[key] = value;
+                });
+            }
+
+            /* Getting Delay Time */
+            var delay = isNumber(Kit.config.delay) ? Kit.config.delay : 0;
+
+            /* Creating Load Handler */
+            var timeHandler = function() {
+                var effectName = Kit.config.effect;
+
+                if (isString(effectName) && Config.effect.hasOwnProperty(effectName)) {
+                    var effect = Config.effect[effectName];
+
+                    if (isFunction(effect)) {
+                        effect.apply(Kit);
+                    }
+                }
+            };
+
+            /* Determine Load Time */
+            var loadtime = Kit.config.loadtime;
+
+            if (loadtime === 'winload') {
+                $(window).load(function() {
+                    clearTimeout(Kit.timeHanlder);
+
+                    Kit.timeHanlder = setTimeout(timeHandler, delay);
+                });
+            } else if (loadtime === 'docready') {
+                clearTimeout(Kit.timeHanlder);
+
+                Kit.timeHanlder = setTimeout(timeHandler, delay);
+            } else if (loadtime === 'selfload') {
+                Kit.holder.load(function() {
+                    clearTimeout(Kit.timeHanlder);
+
+                    Kit.timeHanlder = setTimeout(timeHandler, delay);
+                });
+            } else  {
+                if (isString(loadtime)) {
+                    $(loadtime, Kit.holder).load(function() {
+                        clearTimeout(Kit.timeHanlder);
+
+                        Kit.timeHanlder = setTimeout(timeHandler, delay);
+                    });
+                }
+            }
+
+            /* Adding Kit to Collections */
+            Config.object[kit_id] = Kit;
+
+            /* Clean up Tag */
+            if (Config.clean === true) {
+                foreach(Config.data, function (key, value) {
+                    Kit.holder.remData(value);
+                });
+            }
+        });
+
+        return this;
+    };
+
+    // Automator Prototypes.
+    lazyLoader.prototype = {
+        /* Configuring Automator */
+        setup: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    Config[name] = value;
+                });
+            }
+        },
+
+        /* Adding Effect Handler */
+        addEffect: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                Config.effect[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    Config.effect[name] = func;
+                });
+            }
+
+            return this;
+        },
+        /* Getting The Kit Lists */
+        list: function() {
+            return Config.object;
+        }
+    };
+
+    // Registering Automator including autobuild and default escape condition.
+    Automator(AutomatorName, lazyLoader);
+})(jQuery, jQuery.findData);
+
 /* CONTENT SLIDER KITS */
 (function($, $$, $$$) {
     Registry('content-slider:count', 0, {lock: true, key: 'CSL-001'});
@@ -3568,6 +4483,507 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     });
 
 })(jQuery, Automator, jQuery.findData);
+(function($) {
+    'use strict';
+    var Config = {
+        handleDelay: 0,
+        timeHanlder: setTimeout(function() {}, 0),
+        scrollOwner: $(),
+        scrollHolder: $(),
+
+        onReachTop: [],
+        onReachRight: [],
+        onReachBottom: [],
+        onReachLeft: [],
+        onScrolling: [],
+
+        enableEffect: true,
+        effect: {
+            default: function(range) {
+                if (isNumber(range)) {
+                    if (Config.enableEffect) {
+                        Config.scrollOwner.animate({
+                            scrollTop: range
+                        }, 500);
+                    } else {
+                        Config.scrollOwner.scrollTop(range);
+                    }
+                }
+            }
+        }
+    };
+
+    var ScrollPos = function() {
+        window.scrollPos = { dir: 'vertical', x: 'left', y: 'top' };
+
+        // Getting Scroll Holder.
+        Config.scrollOwner = $.findData('scroll-owner');
+        Config.scrollHolder = $.findData('scroll-holder');
+
+        if (Config.scrollOwner.length < 1) {
+            Config.scrollOwner = $('window');
+            Config.enableEffect = false;
+        }
+        if (Config.scrollHolder.length < 1) {
+            Config.scrollHolder = $('body');
+        }
+
+        // Setting up scroller.
+        Config.scrollHolder.setData('scroll-holder', scrollPos);
+
+        var handleScroll = function() {
+            // Getting Window Innser Size.
+            var windWidth = innerWidth;
+            var windHeight = innerHeight;
+
+            // Getting Scroll Holder Size.
+            var holdWidth = Config.scrollHolder.innerWidth();
+            var holdHeight = Config.scrollHolder.innerHeight();
+
+            // Getting End of X and Y.
+            var right = (holdWidth - windWidth);
+            var bottom = (holdHeight - windHeight);
+
+            // Determine the Y position.
+            if (scrollY === 0) {
+                scrollPos.y = 'top';
+
+                foreach(Config.onReachTop, function (func) {
+                    func();
+                });
+            } else if (scrollY === bottom) {
+                scrollPos.y = 'bottom';
+
+                foreach(Config.onReachBottom, function (func) {
+                    func();
+                });
+            } else {
+                scrollPos.y = scrollY;
+
+                if (scrollY > 0) {
+                    scrollPos.dir = 'vertical';
+                }
+
+                foreach(Config.onScrolling, function (func) {
+                    func();
+                });
+            }
+
+            // Determine the X position.
+            if (scrollX === 0) {
+                scrollPos.x = 'left';
+
+                foreach(Config.onReachLeft, function (func) {
+                    func();
+                });
+            } else if (scrollX === right) {
+                scrollPos.x = 'right';
+
+                foreach(Config.onReachRight, function (func) {
+                    func();
+                });
+            } else {
+                scrollPos.x = scrollX;
+
+                if (scrollX > 0) {
+                    scrollPos.dir = 'horizontal';
+                }
+
+                foreach(Config.onScrolling, function (func) {
+                    func();
+                });
+            }
+
+            // Applying position to holder.
+            Config.scrollHolder.setData('scroll-holder', scrollPos);
+        };
+
+        $(window).scroll(function() {
+            if (isNumber(Config.handleDelay) && Config.handleDelay !== 0) {
+                clearTimeout(Config.timeHanlder);
+
+                Config.timeHanlder = setTimeout(handleScroll, Config.handleDelay);
+            } else {
+                handleScroll();
+            }
+        });
+    };
+
+    ScrollPos.prototype = {
+        onReachTop: function(func) {
+            if (isFunction(func)) {
+                Config.onReachTop.push(func);
+            } else if (isArray(func)) {
+                foreach(func, function (func) {
+                    if (isFunction(func)) {
+                        Config.onReachTop.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+        onReachRight: function(func) {
+            if (isFunction(func)) {
+                Config.onReachRight.push(func);
+            } else if (isArray(func)) {
+                foreach(func, function (func) {
+                    if (isFunction(func)) {
+                        Config.onReachRight.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+        onReachBottom: function(func) {
+            if (isFunction(func)) {
+                Config.onReachBottom.push(func);
+            } else if (isArray(func)) {
+                foreach(func, function (func) {
+                    if (isFunction(func)) {
+                        Config.onReachBottom.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+        onReachLeft: function(func) {
+            if (isFunction(func)) {
+                Config.onReachLeft.push(func);
+            } else if (isArray(func)) {
+                foreach(func, function (func) {
+                    if (isFunction(func)) {
+                        Config.onReachLeft.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+        onScroll: function(func) {
+            if (isFunction(func)) {
+                Config.onScrolling.push(func);
+            } else if (isArray(func)) {
+                foreach(func, function (func) {
+                    if (isFunction(func)) {
+                        Config.onScrolling.push(func);
+                    }
+                });
+            }
+
+            return this;
+        },
+        setDelay: function(delay) {
+            if (isNumber(delay)) {
+                Config.handleDelay = delay;
+            }
+
+            return this;
+        },
+        addScrollEffect: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                Config.effect[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    Config.effect[name] = func;
+                });
+            }
+
+            return this;
+        },
+        scrollTop: function(range, effect) {
+            if (isNumber(range)) {
+                if (isString(effect) && Config.enableEffect) {
+                    if (Config.effect.hasOwnProperty(effect)) {
+                        Config.effect[effect](range);
+                    } else {
+                        Config.scrollOwner.scrollTop(range);
+                    }
+                } else {
+                    Config.scrollOwner.scrollTop(range);
+                }
+            }
+
+            return this;
+        }
+    };
+
+    Automator('scroll-pos', ScrollPos);
+})(jQuery);
+/**
+ * BabonJS.
+ * ScrollDocker Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 10/29/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name.
+    var AutomatorName = 'scroll-docker';
+
+    // Automator Configurations.
+    var Config = {
+        counter: 0,
+        IDPrefix: 'scroll-docker-',
+        allowReconfigure: false,
+        clean: true,
+
+        // Attributes Naming.
+        data: {
+            Kit: 'scroll-docker',
+            KitID: 'scroll-docker-id',
+            KitTrigger: 'scroll-docker-pos',
+            KitState: 'scroll-docker-state',
+
+            EnterClass: 'enter',
+            LeaveClass: 'leave'
+        },
+
+        /* Object Collections */
+        object: {},
+        docker: {},
+        dockenter: {},
+        dockleave: {},
+
+        /* Object Event Handler */
+        enter: {},
+        leave: {},
+    };
+
+    /* Creating Scroll Handler */
+    Automator('scroll-pos').onScroll(function() {
+        var wpos = window.scrollPos;
+
+        foreach(Config.dockenter, function (pos, kit) {
+            if (isNumber(wpos.y) && wpos.y >= pos) {
+                if (kit.state !== Config.data.EnterClass) {
+                    kit.state = Config.data.EnterClass;
+                    kit.holder.setData(Config.data.KitState, Config.data.EnterClass).removeClass(Config.data.LeaveClass).addClass(Config.data.EnterClass);
+
+                    if (Config.enter.hasOwnProperty(kit.config.handler)) {
+                        Config.enter[kit.config.handler].apply(kit);
+                    }
+                }
+
+                /* Get Outside */
+                if (kit.config.outside === true) {
+                    if (kit.state === Config.data.EnterClass) {
+                        if (kit.outside !== true) {
+                            if (wpos.y > kit.config.outsidepos) {
+                                kit.outside = true;
+                                kit.holder.toggleClass('outside');
+                            }
+                        } else if (kit.outside === true) {
+                            if (wpos.y < kit.config.outsidepos) {
+                                kit.outside = false;
+                                kit.holder.toggleClass('outside');
+
+                                if (Config.enter.hasOwnProperty(kit.config.handler)) {
+                                    Config.enter[kit.config.handler].apply(kit);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        foreach(Config.dockleave, function(pos, kit) {
+            if (isNumber(wpos.y) && wpos.y <= pos) {
+                if (kit.state === Config.data.EnterClass) {
+                    kit.state = Config.data.LeaveClass;
+                    kit.holder.setData(Config.data.KitState, Config.data.LeaveClass).removeClass(Config.data.EnterClass).addClass(Config.data.LeaveClass);
+
+                    if (Config.leave.hasOwnProperty(kit.config.handler)) {
+                        Config.leave[kit.config.handler].apply(kit);
+                    }
+                }
+            }
+        });
+    });
+
+    // ScrollDocker object.
+    var ScrollDocker = function () {
+        this.config = {
+            handler: 'none',
+            enterpos: 0,
+            leavepos: 0,
+            outside: true,
+            outsidepos: 0
+        };
+
+        this.id = '';
+        this.state = 'ready';
+        this.holder = $('<div>');
+
+        return this;
+    };
+
+    // ScrollDocker Object Prototypes.
+    ScrollDocker.prototype = {
+        // Change or add Kit properties.
+        set: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                var self = this;
+
+                foreach(name, function (name, value) {
+                    self[name] = value;
+                });
+            }
+
+            return this;
+        },
+    };
+
+    // Automator Constructor.
+    var scrollDocker = function (object) {
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d(Config.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d(Config.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + Config.data.Kit + ')');
+
+        // Iterating Objects.
+        object.each(function () {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData(Config.data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = Config.IDPrefix + (Config.counter + 1);
+
+                /* Increasing Counter */
+                Config.counter++;
+            }
+
+            /* Creating new Kit and asign ID */
+            var Kit = new ScrollDocker().set({ 'id': kit_id, holder: $(this).setData(Config.data.KitID, kit_id) });
+
+            /* Adding Kit to Collections */
+            Config.object[kit_id] = Kit;
+
+            /* Getting Configuration */
+            var config = $(this).getData(Config.data.Kit);
+            if (isObject(config)) {
+                foreach(config, function (name, value) {
+                    if (name === 'enterpos' || name === 'leavepos') {
+                        if (isString(value)) {
+                            if (value.search('%') > -1) {
+                                value = Number(value.replace('%', ''));
+                                value = (value / 100 * window.innerHeight);
+                            } else {
+                                value = Number(value);
+                            }
+                        }
+                    }
+                    Kit.config[name] = value;
+                });
+                if (!config.hasOwnProperty('leavepos')) {
+                    Kit.config.leavepos = Kit.config.enterpos;
+                }
+            }
+
+            /* Registering Docker to Scroll Handler */
+            var kit_top = Kit.holder.offset().top;
+
+            var dc_pos_etr = (kit_top - Kit.config.enterpos);
+            var dc_pos_lve = (kit_top - Kit.config.leavepos);
+
+            /* Configuring Outside Area */
+            if (Kit.config.outside === true) {
+                Kit.config.outsidepos = (dc_pos_etr + Kit.config.enterpos);
+            }
+
+            /* Writing Trigger Pos */
+            Kit.holder.setData(Config.data.KitTrigger, { enter: dc_pos_etr, leave: dc_pos_lve });
+
+            /* Registering Docker */
+            Config.dockenter[dc_pos_etr] = Kit;
+            Config.dockleave[dc_pos_lve] = Kit;
+
+            /* Cleanup Data Tag */
+            if (Config.clean === true) {
+                foreach(Config.data, function(key, value) {
+                    Kit.holder.remData(value);
+                });
+            }
+        });
+
+        return this;
+    };
+
+    // Automator Prototypes.
+    scrollDocker.prototype = {
+        addEnter: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                Config.enter[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    Config.enter[name] = func;
+                });
+            }
+
+            return this;
+        },
+        addLeave: function(name, func) {
+            if (isString(name) && isFunction(func)) {
+                Config.leave[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    Config.leave[name] = func;
+                });
+            }
+
+            return this;
+        },
+
+        // Configuring Automator.
+        setup: function (name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    Config[name] = value;
+                });
+            } else {
+                return Config;
+            }
+
+            return this;
+        },
+        config: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                Config.data[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    Config.data[name] = value;
+                });
+            } else {
+                return Config.data;
+            }
+
+            return this;
+        },
+
+        // Selecting Kit Object by KitID.
+        with: function (name) {
+            if (Config.object.hasOwnProperty(name)) {
+                return Config.object[name];
+            }
+        },
+    };
+
+    // Registering Automator including autobuild and default escape condition.
+    Automator(AutomatorName, scrollDocker);
+})(jQuery, jQuery.findData);
+
 /**
  * Tab Kit Automator.
  */
@@ -3803,450 +5219,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     }
     Automator('toggle-state-destroyer', DownStateDestroyer).autobuild(true).escape(function() {
         if (Automator('toggle-state-destroyer').enabled() === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-})(jQuery, jQuery.findData);
-
-/**
- * Citraland Megah Batam.
- * Content Rotator Automator Scripts.
- * Language: Javascript.
- * Created by mahdaen on 10/13/14.
- * License: GNU General Public License v2 or later.
- */
-
-(function ($, $d) {
-    'use strict';
-
-    // Automator Name Variable.
-    var AutomatorName = 'content-rotator';
-
-    // Rotator Main Configuration.
-    var Config = {
-        counter: 0,
-        IDPrefix: 'rotator-',
-        allowReconfigure: false,
-
-        // Constructor Naming.
-        data: {
-            // HTML Data Attributes Naming.
-            Kit: 'content-rotator',
-            KitID: 'content-rotator-id',
-            KitConfigured: 'content-rotator-configured',
-
-            Item: 'content-rotator-item',
-            ItemID: 'content-rotator-item-id',
-            ItemState: 'content-rotator-item-state',
-
-            Prev: 'content-rotator-prev',
-            Next: 'content-rotator-next',
-            Select: 'content-rotator-select',
-
-            Progress: 'content-rotator-progress',
-
-            // Data State Naming.
-            ItemActive: 'active',
-
-            ProgressStopped: 'stopped',
-            ProgressPaused: 'paused',
-
-            NavigateNext: 'forward',
-            NavigatePrev: 'backward'
-        },
-
-        rotator: {},
-        animator: {
-            default: function() {
-                this.swap();
-            },
-            fade: function() {
-                var self = this;
-
-                self.active.fadeOut();
-                self.target.fadeIn();
-
-                self.swap();
-            }
-        }
-    };
-
-    // Rotator Object.
-    var ContentRotator = function() {
-        // Rotator Object Configuration.
-        this.config = {
-            // Auto rotate Items.
-            auto: false,
-
-            // Animation Name.
-            animationName: 'default',
-
-            // Animation Speed.
-            animationSpeed: 0
-        };
-
-        // Attributes Naming.
-        this.cons = Config.data;
-
-        // Creating temporary holder.
-        this.holder = $('<div>');
-
-        return this;
-    };
-
-    // Rotator Prototypes.
-    ContentRotator.prototype = {
-        navigate: function(direction) {
-            var next = 0;
-
-            if (isString(direction)) {
-                // Handle for next and prev navigation.
-                if (direction === Config.data.NavigateNext) {
-                    if (this.current === this.total) {
-                        next = 1;
-                    } else {
-                        next = (this.current + 1);
-                    }
-                } else if (direction === Config.data.NavigatePrev) {
-                    if (this.current === 1) {
-                        next = this.total;
-                    } else {
-                        next = (this.current - 1);
-                    }
-                } else {
-                    return this;
-                }
-
-                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + next + ')');
-                this.current = next;
-            } else if (isNumber(direction) && direction >= 1 && direction <= this.total) {
-                // Handle for index specific navigation.
-                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + direction + ')');
-                this.current = direction;
-            }
-
-            // Animating Items.
-            this.animate();
-
-            return this;
-        },
-        animate: function() {
-            var anim = this.config.animationName;
-
-            if (Config.animator.hasOwnProperty(anim) && isFunction(Config.animator[anim])) {
-                Config.animator[anim].apply(this);
-            } else {
-                this.swap();
-            }
-
-            return this;
-        },
-        swap: function() {
-            // Deactivating Active Item.
-            this.active.removeClass(Config.data.ItemActive).remData(Config.data.ItemState);
-
-            // Activating Target Item.
-            this.target.addClass(Config.data.ItemActive).setData(Config.data.ItemState, Config.data.ItemActive);
-
-            // Replacing active item with target item.
-            this.active = this.target;
-
-            // Starting auto rotate content.
-            if (isNumber(this.config.auto)) {
-                this.restart();
-            }
-
-            return this;
-        },
-        start: function() {
-            var duration = (this.config.auto * 1000),
-                w = this.progress.width();
-
-            if (w > 0) {
-                var style = this.progress.style(),
-                    width = Number(style.width.replace('%', ''));
-
-                duration = duration - ((width / 100) * duration);
-            }
-
-            this.progress.removeClass(Config.data.ProgressStopped).animate({
-                width: '100%'
-            }, duration, function() {
-                // Getting Rotator ID and Resetting Width.
-                var rt_id = $(this).css({ width: 0 }).getData(Config.data.KitID);
-
-                Automator(AutomatorName).with(rt_id).navigate(Config.data.NavigateNext);
-            });
-
-            return this;
-        },
-        restart: function() {
-            this.stop();
-            this.start();
-
-            return this;
-        },
-        stop: function() {
-            this.progress.stop().addClass(Config.data.ProgressStopped).width(0);
-
-            return this;
-        },
-        pause: function() {
-            this.progress.stop().addClass(Config.data.ProgressPaused);
-
-            return this;
-        },
-        set: function(key, value) {
-            if (isString(key)) {
-                if (value) this[key] = value;
-            } else if (isObject(key)) {
-                var self = this;
-
-                foreach(key, function (key, value) {
-                    self[key] = value;
-                });
-            }
-
-            return this;
-        }
-    };
-
-    /**
-     * Content Rotator Automator Constructor.
-     * @param object - jQuery object that has attribute 'data-rotator-kit'.
-     * @required htmlTag - 'data-rotator-kit' as holder, 'data-rotator-item' as rotator item, 'data-rotator-select' as selector, 'data-rotator-next' as navigate forward, 'data-rotator-prev' as navigate backward.
-     * @config data-object - 'auto' with number duration, 'animationName' for custom animation, 'animationSpeed' for custom animation speed. Sample: `data-rotator-kit="auto: 5000, animationName: 'fade', animationSpeed: 1000"`.
-     * @returns {contentRotator}
-     * @constructor
-     */
-    var contentRotator = function (object) {
-        !isJQuery(object) ? object = $d(Config.data.Kit) : object;
-
-        // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + Config.data.Kit + ')');
-
-        // Initializing Rotator.
-        object.each(function() {
-            // Check if already configured and skip if not allowed.
-            if (Config.allowReconfigure === false && $(this).getData(Config.data.KitConfigured) === true) return;
-
-            // Creating Rotator ID if not defined.
-            var rt_id = $(this).getData(Config.data.KitID);
-
-            if (!isString(rt_id)) {
-                rt_id = Config.IDPrefix + (Config.counter + 1);
-
-                // Applying Rotator ID to Rotator Holder.
-                $(this).setData(Config.data.KitID, rt_id);
-            }
-
-            // Creating Rotator Object.
-            var rotator = new ContentRotator().set('holder', $(this));
-
-            // Getting Rotator Config.
-            var config = $(this).getData(Config.data.Kit);
-
-            // Apllying rotator object config.
-            if (isObject(config)) {
-                foreach(config, function (key, value) {
-                    rotator.config[key] = value;
-                });
-            }
-
-            // Getting Rotator Items.
-            var items = $d(Config.data.Item, this).setData(Config.data.KitID, rt_id);
-
-            // Getting Rotator Selector.
-            var select = $d(Config.data.Select, this).setData(Config.data.KitID, rt_id);
-
-            // Getting Rotator Navigator and Binding Click Function.
-            var prev = $d(Config.data.Prev, this).setData(Config.data.KitID, rt_id).click(function(e) {
-                e.stopPropagation();
-
-                rotator.navigate(Config.data.NavigatePrev);
-
-                return false;
-            });
-            var next = $d(Config.data.Next, this).setData(Config.data.KitID, rt_id).click(function(e) {
-                e.stopPropagation();
-
-                rotator.navigate(Config.data.NavigateNext);
-
-                return false;
-            });
-
-            // Adding navigator to Rotator Object.
-            rotator.set({
-                'nav_prev': prev,
-                'nav_next': next
-            });
-
-            // Creating Rotator Progress Controll if not exist.
-            var prog = $d(Config.data.Progress, this).setData(Config.data.KitID, rt_id);
-
-            var progressQuery = {};
-            progressQuery[Config.data.Progress] = '';
-            progressQuery[Config.data.KitID] = rt_id;
-
-            if (prog.length < 1) {
-                prog = $('<div>').setData(progressQuery).addClass(Config.data.Progress).css({ width: 0, position: 'absolute' }).prependTo(this);
-            }
-
-            // Adding Progress to Rotator Object.
-            rotator.set('progress', prog);
-
-            // Adding Rotator Object to list.
-            Config.rotator[rt_id] = rotator;
-
-            // Increasing Counter.
-            Config.counter++;
-        });
-
-        // Reinitializing Rotator to prevent wrong items index number for rotator inside rotator.
-        foreach(Config.rotator, function (rt_id, rotator) {
-            // Checking if already configured and determine does it should be reconfigured or not.
-            if (Config.allowReconfigure === false && rotator.holder.getData(Config.data.KitConfigured) === true) {
-                return;
-            } else {
-                rotator.holder.setData(Config.data.KitConfigured, true);
-            }
-
-            // Temporary Default Item.
-            var default_item;
-            var default_select = 0;
-
-            // Initializing Rotator Items.
-            var itemQuery = {};
-            itemQuery[Config.data.Item] = '?';
-            itemQuery[Config.data.KitID] = rt_id;
-
-            var items = $d(itemQuery).each(function(index) {
-                // Applying Item Index ID.
-                $(this).setData(Config.data.ItemID, (index + 1));
-
-                // Setting first item as default activated item.
-                if (index === 0) {
-                    default_item = $(this);
-                    default_select = 0;
-                    rotator.current = 1;
-                    rotator.active = $(this);
-                }
-
-                // If this is default, then replace the first activated item with this.
-                if ($(this).getData(Config.data.Item) === 'default') {
-                    default_item = $(this);
-                    default_select = index;
-                    rotator.current = (index + 1);
-                    rotator.active = $(this);
-                }
-            });
-
-            // Activating Default Item.
-            default_item.setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
-
-            // Initializing Rotator Selectors.
-            var selectorQuery = {};
-            selectorQuery[Config.data.Select] = '?';
-            selectorQuery[Config.data.KitID] = rt_id;
-
-            var selects = $d(selectorQuery).each(function(index) {
-                // Applying Item Index ID.
-                $(this).setData(Config.data.ItemID, (index + 1));
-
-                // Activating Default Select.
-                if (index === default_select) {
-                    $(this).setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
-                }
-
-                // Biding Click Function.
-                $(this).click(function(e) {
-                    e.stopPropagation();
-
-                    var rt_id = $(this).getData(Config.data.KitID);
-                    var index = $(this).getData(Config.data.ItemID);
-
-                    if (isString(rt_id) && isNumber(index)) {
-                        rotator.navigate(index);
-                    }
-
-                    return false;
-                });
-            });
-
-            // Adding Rotator Items and Selects to Rotator Object.
-            if (items.length > 0) {
-                rotator.set({ 'items': items, total: items.length });
-            }
-            if (selects.length > 0) {
-                rotator.set('selects', selects);
-            }
-        });
-
-        // Initializing Auto Rotate.
-        foreach(Config.rotator, function (name, rotator) {
-            if (isNumber(rotator.config.auto)) {
-                rotator.start();
-            }
-        });
-
-        return this;
-    };
-
-    // Automator Prototypes.
-    contentRotator.prototype = {
-        addAnimation: function(animationName, func) {
-            if (isString(animationName) && isFunction(func)) {
-                Config.animator[animationName] = func;
-            } else if (isObject(animationName)) {
-                foreach(animationName, function (name, func) {
-                    if (isFunction(func)) {
-                        Config.animator[name] = func;
-                    }
-                });
-            }
-
-            return this;
-        },
-        with: function(rotator_id) {
-            if (isString(rotator_id)) {
-                if (Config.rotator[rotator_id]) {
-                    return Config.rotator[rotator_id];
-                }
-            }
-
-            return this;
-        },
-        setup: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (configName, value) {
-                    Config[configName] = value;
-                });
-            } else {
-                return Config;
-            }
-
-            return this;
-        },
-        construct: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config.data[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (configName, value) {
-                    Config.data[configName] = value;
-                });
-            }
-
-            return this;
-        }
-    };
-
-    // Registering Automator including autobuild and default escape condition.
-    Automator(AutomatorName, contentRotator).autobuild(true).escape(function () {
-        if (Automator(AutomatorName).enabled === false) {
             return true;
         } else {
             return false;
