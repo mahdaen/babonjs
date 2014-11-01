@@ -273,7 +273,8 @@ After configuring automator, then you can write the automator data attribute wit
 <div class="video" data-aspect-ratio="16:9"></div>
 ```
 
-##### **Automator Public Methods**
+***
+#### **Automator Public Methods**
 **`Automator.list`**
 > Lists all automators name. This is not function. Providing Array with list of automators name.
 
@@ -283,7 +284,8 @@ After configuring automator, then you can write the automator data attribute wit
 **`Automator.disable($name)`**
 > Disable automator. `$name` is the automator name.
 
-##### **Automator Default Methods**
+***
+#### **Automator Default Methods**
 > You must select an automator before running methods below.
 > E.g: **`Automator('box-ratio')`**.
 
