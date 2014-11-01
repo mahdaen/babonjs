@@ -10,26 +10,27 @@
 ## **Contents**
 Let's get started to find out whats the **BabonJS** have.
 
+***
 ### **Native**
 **BabonJS** creates some useful functions to extend native functions.
 
 #### **Object Type**
 > Determine the type of objects.
 
-- **`isString(OBJECT)`** - Return `true` if `OBJECT` is string. Otherwise return false.
-- **`isObject(OBJECT)`** - Return `true` if `OBJECT` is object and not an array.
-- **`isArray(OBJECT)`** - Return `true` if `OBJECT` is array.
-- **`isFunction(OBJECT)`** - Return `true` if `OBJECT` is function.
-- **`isNumber(OBJECT)`** - Return `true` if `OBJECT` is number.
-- **`isBoolean(OBJECT)`** - Return `true` if `OBJECT` is boolean.
-
-- **`isJQuery(OBJECT)`** - Return `true` if `OBJECT` is jQuery object.
-- **`isHTML(OBJECT)`** - Return `true` if `OBJECT` is HTML element.
-
-- **`isColor(OBJECT)`**
-- **`isURL(OBJECT)`**
-- **`isEmail(OBJECT)`**
-- **`isDate(OBJECT)`**
+> **`isString(OBJECT)`** - Return `true` if `OBJECT` is string. Otherwise return false.
+> **`isObject(OBJECT)`** - Return `true` if `OBJECT` is object and not an array.
+> **`isArray(OBJECT)`** - Return `true` if `OBJECT` is array.
+> **`isFunction(OBJECT)`** - Return `true` if `OBJECT` is function.
+> **`isNumber(OBJECT)`** - Return `true` if `OBJECT` is number.
+> **`isBoolean(OBJECT)`** - Return `true` if `OBJECT` is boolean.
+> 
+> **`isJQuery(OBJECT)`** - Return `true` if `OBJECT` is jQuery object.
+> **`isHTML(OBJECT)`** - Return `true` if `OBJECT` is HTML element.
+> 
+> **`isColor(OBJECT)`**
+> **`isURL(OBJECT)`**
+> **`isEmail(OBJECT)`**
+> **`isDate(OBJECT)`**
 
 #### **Foreach Loop**
 Can be used to loop object, array, number or string. Hope it's useful. ;)
@@ -73,11 +74,13 @@ foreach(obj, function(char) {
 // Log: 'e'
 ```
 
+***
 ### **jQuery Plugin**
 **BabonJS** creates some `jQuery` plugin.
 
 #### **Has Attribute**
-> **`$.fn.hasAttr(STR_ATTR)`** - Determine whether element has attribute or not.
+**`$.fn.hasAttr(STR_ATTR)`**
+> Determine whether element has attribute or not.
 
 ***`Sample`***
 ```html
@@ -89,7 +92,8 @@ $('.test').hasAttr('required'); // Return false.
 ```
 
 #### **Has Data Attribute**
-> **`$.fn.hasData(STR_DATA_ATTR)`** - Determine whether element has data attribute or not.
+**`$.fn.hasData(STR_DATA_ATTR)`**
+> Determine whether element has data attribute or not.
 
 ***`Sample`***
 ```html
@@ -101,7 +105,8 @@ $('.profile').hasData('address'); // Return false
 ```
 
 #### **Get Data Attribute Value**
-> **`$.fn.getData(STR_DATA_ATTR)`** - Get data attribute value. Data value will be automatically converted in the return value. Data value can be `JSON`,`object`, `array`, `boolean`, `number` or `string`. If the value is `string` format, please **note** don't write like this: `a, b, c d e`. It's will be converted as `array`.
+**`$.fn.getData(STR_DATA_ATTR)`**
+> Get data attribute value. Data value will be automatically converted in the return value. Data value can be `JSON`,`object`, `array`, `boolean`, `number` or `string`. If the value is `string` format, please **note** don't write like this: `a, b, c d e`. It's will be converted as `array`.
 
 ***Detail***
 - **`{"a": 1, "b": 2}`** - `JSON` format and converted as an `object`.
@@ -128,7 +133,8 @@ Array ['Sam Smith', 'Gabrielle Smith', 'Ariana Smith']
 ```
 
 #### **Set Data Attribute Value**
-> **`$.fn.setData(STR_DATA_ATTR, VALUE)`** - Set data attribute value. No matter what data that you set to data attribute, it's will automatically converted with right format (read Get Data Attribute detail).
+**`$.fn.setData(STR_DATA_ATTR, VALUE)`**
+> Set data attribute value. No matter what data that you set to data attribute, it's will automatically converted with right format (read Get Data Attribute detail).
 
 ***`Sample`***
 ```js
@@ -142,7 +148,8 @@ $('.profile')
 ```
 
 #### **Remove Data Attribute**
-> **`$.fn.remData(STR_OR_ARRAY_DATA_ATTR)`** - Remove data attribute from an element. Arguments can be `string` or `array` data-attribute name.
+**`$.fn.remData(STR_OR_ARRAY_DATA_ATTR)`**
+> Remove data attribute from an element. Arguments can be `string` or `array` data-attribute name.
 
 ***`Sample`***
 ```js
@@ -151,14 +158,28 @@ $('.profile').remData(['profile', 'interests']); // Remove data-profile and data
 ```
 
 #### **Get Element Offsets**
-> **`$.fn.offsets()`** - Get element offsets to extend the default `$.fn.offset()` plugin. Returns `object` offsets: `Object { width: ?, height: ?, top: ?, left: ?, center: ? }`.
+**`$.fn.offsets()`**
+> Get element offsets to extend the default `$.fn.offset()` plugin. Returns `object` offsets: `Object { width: ?, height: ?, top: ?, left: ?, center: ? }`.
 
 #### **Set Box Ratio**
-> **`$.fn.boxRatio()`** - Get the box ratio of an element. The result will be added to `data-box-ratio` attribute and returned as `array`.
+**`$.fn.boxRatio()`**
+
+> Get the box ratio of an element. The result will be added to `data-box-ratio` attribute and returned as `array`.
 
 #### **Get Box Orientation**
-> **`$.fn.orientation()`** - Get orientation of an element. The result will be added to class and returned as `string`. The result is `landscape` or `portrait`.
+**`$.fn.orientation()`**
 
+> Get orientation of an element. The result will be added to class and returned as `string`. The result is `landscape` or `portrait`.
+
+#### **Data Selector**
+**`$(':hasdata($name, $value)')`**
+
+> Select data attribute with `$(':hasdata(bo
+
+#### **Data Attribute Finder**
+**Data Attribute Finder** is simplified `:hasdata` selector.
+
+***
 ## **Automators**
 **Automators** help you to build your needs, especially in DOMs with less-write of `Javascript` because **Automators** definition is using DOM data attribute, and of course configurable. Why should you cares about it? Let's get started with some case. 
 
@@ -180,9 +201,77 @@ And boom! When the pages loaded, you'll get the video-wrap aspect ratio automati
 <!-- The video wrap width is 1600px -->
 <div class="video-wrap" data-box-ratio="16,9" style="height: 900px;"></div>
 ```
-
 Hope this help you! ;)
 
+All automator is configurable. So, you can configure them with your taste before document ready. To configure the automators, just select the automator `Automator($at_name)` where `$at_name` is automator name, then followed by method. Example:
+
+```js
+// Set the automator to cleanup data-attribute after build and rename the default data-attribute name.
+Automator('box-ratio')
+	.setup('clean', true')
+	.config('Kit, 'aspect-ratio');
+```
+
+After configuring automator, then you can write the automator data attribute with your own.
+
+```html
+<div class="video" data-aspect-ratio="16:9"></div>
+```
+
+##### **Automator Public Methods**
+**`Automator.list`**
+> Lists all automators name. This is not function. Providing Array with list of automators name.
+
+**`Automator.enable($name)`**
+> Enable automator. `$name` is the automator name.
+
+**`Automator.disable($name)`**
+> Disable automator. `$name` is the automator name.
+
+##### **Automator Default Methods**
+> You must select an automator before running methods below.
+> E.g: **`Automator('box-ratio')`**.
+
+**`.setup($name, $value)`**
+> Set the automator config. `$name` is string for config name, `$value` is anythings that will be set to `$name`. If you want to set multiple config, you can use `objet` as `$name` and ignore the `$value`.
+> Because each automator will have different config, you can get the available config by running `Automator($at_name).setup()` in developer console.
+
+**`.config($name, $value)`**
+> Set the data-attribute name. `$name` is the key of config e.g: `Kit`, `$value` is the string data-attribute name. Each automator will have different data-attribute naming. You can get the available config by running `Automator($at_name).config()` in developer console.
+
+**`.list()`**
+> Get the lists of Kit that builded by automator. Usually each Kit also can be configured. Some automator doesn't build custom kit. So if no available kit, it's return empty object.
+
+**`.with($id)`**
+> Get the Kit that builded by automator by `ID`. `$id` is string for kit `ID`. This method will returning Kit Object.
+
+**`.build($object)`**
+> Building Kits or DOM. `$object` is jQuery object that have a data-attribute for it's automator, or string to use it as query context.
+> By default, automators will build them when document ready. But if you don't want to run automator automatically or you want to build them after document ready triggered, you can use this.
+
+**`.escape($func)`**
+> Adding ignore function. `$func` is function that handle does it should ignored, or array with functions. If one of  `$func` returns `true`, then this automator will be ignored. It's usable when you only need this automator for specific rule. E.g: You only need to apply box-ratio on desktop, then you can escape the automator on mobile or tablet. Example:
+
+```js
+// Ignore box-ratio on mobile and tablet.
+Automator('box-ratio').escape(function() {
+	return window['is-mobile'] || window['is-tablet'] ? true : false;
+});
+```
+
+**`.autobuild($bool)`**
+> Set does the automator should auto build or not. Default is `true`.
+
+**`.enabled()`**
+> Get does the automator is enabled or disabled. Returns `boolean`.
+
+**`.bind($name, $func)`**
+> Add callback to automator. The callback will be triggered after the build process complete. `$name` is string handler name, `$func` is function to handle callback.
+
+**`.unbind($name)`**
+> Remove callback from automator. `$name` is the handler name.
+
+***
 ### **Box Automator**
 **Box Automator** will help you to maintain the **`box-ratio`**, **`box-height`, and **`box-row-height`**.
 
@@ -238,3 +327,26 @@ Hope this help you! ;)
 	</ul>
 </div>
 ```	
+
+#### **Box Row Height Automator**
+**Box Row Height Automator** / **`Automator('box-row-height')`** will help you to maintain height of element in each row, like when using Grid Layout.
+
+- **`data-box-row-height="COLUMN_COUNT"`** - for parent node.
+- **`data-box-row-child`** - for child nodes.
+
+> **`COLUMN_COUNT`** is the number of column where the element will be grouped. For example, if you have 10 `<li>` and want to set the height for every **3** `<li>`, then use **3** as **`COLUMN_COUNT`**.
+
+***`Sample`***
+```html
+<!-- Makes the every 3 child nodes in the same height -->
+<ul class="grid" data-box-row-height="3">
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+	<li class="col-4" data-box-row-child></li>
+</ul>
+```

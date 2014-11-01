@@ -91,5 +91,5 @@
         }
     };
     
-    window.$_data = $.findData = DataFinder;
+    window.$data = $.findData = DataFinder;
 })(jQuery);

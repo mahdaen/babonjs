@@ -72,5 +72,5 @@
         $_tablet: new _MQ_('only screen and (min-device-width : 768px) and (max-device-width : 1024px)')
     });
 
-    window.$_media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
+    window.$media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
 })(enquire);

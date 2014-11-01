@@ -999,7 +999,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         }
     };
     
-    window.$_data = $.findData = DataFinder;
+    window.$data = $.findData = DataFinder;
 })(jQuery);
 /**
  * Public Registry.
@@ -1140,16 +1140,32 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 /* Continue creating automator when type of builder is function */
                 if (isFunction(builder)) {
                     var Automator = function() {
-                        this._constructor = function(){};
+                        this._constructor = {};
                         this._constructor.id = name;
                         this._constructor.func = builder;
                         this._constructor.version = version;
 
+                        this._constructor.hand = {};
+                        this._constructor.type = 'automator';
+
                         this.auto = true;
                         this.dont = [];
-                        this._constructor.hand = {};
 
-                        this._constructor.type = 'automator';
+                        this._config = {
+                            counter: 0,
+                            IDPrefix: name + '-',
+
+                            clean: false,
+
+                            data: {
+                                Kit: name,
+                                KitID: name + '-id'
+                            },
+
+                            maps: {
+
+                            }
+                        };
 
                         /* Reconfiguring Autobuild if defined and adding to Autobuild map */
                         if (isBoolean(auto)) {
@@ -1204,6 +1220,71 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
     /* Creating the Automator Prototypes */
     var defaultModules = {
+        /**
+         * Setting Up the Automator.
+         * @param name - String Automator Property Name. If it's object, then each item should have name and value.
+         * @param value - Automator Property Value. Optional if name is object.
+         * @returns {defaultModules}
+         */
+        setup: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                this._config[name] = value;
+            } else if (isObject(name)) {
+                var self = this;
+                foreach(name, function (name, value) {
+                    self._config[name] = value;
+                });
+            } else {
+                console.warn('Invalid ' + this._constructor.id + ' config arguments!');
+                return this._config;
+            }
+
+            return this;
+        },
+
+        /**
+         * Setting Up the Automator Data Attribute.
+         * @param id - String data attribute ID.
+         * @param name - String data attribute Name.
+         * @returns {defaultModules}
+         */
+        config: function(id, name) {
+            if (isString(id) && isDefined(name)) {
+                this._config.data[id] = name;
+            } else if (isObject(id)) {
+                var self = this;
+                foreach(id, function (id, name) {
+                    self._config.data[id] = name;
+                });
+            } else {
+                console.warn('Invalid ' + this._constructor.id + ' config arguments!');
+                return this._config.data;
+            }
+
+            return this;
+        },
+
+        /**
+         * Get the lists of kit.
+         * @returns {*}
+         */
+        list: function () {
+            return this._config.maps;
+        },
+
+        /**
+         * Get the kit by ID.
+         * @param id - String Kit ID.
+         * @returns {*}
+         */
+        with: function(id) {
+            if (isString(id) && this._config.maps.hasOwnProperty(id)) {
+                return this._config.maps[id];
+            } else {
+                console.warn(this._constructor.id + ' "' + id + '" is undefined!');
+            }
+        },
+
         /**
          * Automator Builder.
          * @param * {optional} - Build parameters is unlimited. They will be passed to the builder function.
@@ -1769,7 +1850,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         $_tablet: new _MQ_('only screen and (min-device-width : 768px) and (max-device-width : 1024px)')
     });
 
-    window.$_media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
+    window.$media = window.atmedia = function(STR_QUERY) {return new _MQ_(STR_QUERY)};
 })(enquire);
 (function($, $d) {
     'use strict';
@@ -2194,48 +2275,11 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 (function($, $d) {
     'use strict';
 
-    var Config = {
-        'box-ratio': {
-            name: 'box-ratio',
-
-            clean: false,
-
-            data: {
-                Kit: 'box-ratio',
-                KitID: 'box-ratio-id'
-            }
-        },
-        'box-height': {
-            name: 'box-height',
-
-            counter: 0,
-            IDPrefix: 'box-height-',
-            clean: false,
-
-            data: {
-                Kit: 'box-height',
-                KitID: 'box-height-id',
-                Child: 'box-child'
-            },
-
-            object: {}
-        },
-        'box-row-height': {
-            name: 'box-row-height',
-
-            IDPrefix: 'box-row-',
-            counter: 0,
-            clean: false,
-
-            data: {
-                Kit: 'box-row-height',
-                KitID: 'box-row-height-id',
-                Child: 'box-row-child',
-                Group: 'box-row-group'
-            },
-
-            object: {}
-        }
+    /* Automator Names */
+    var nameof = {
+        'box-ratio': 'box-ratio',
+        'box-height': 'box-height',
+        'box-row-height': 'box-row-height'
     }
 
     /**
@@ -2245,19 +2289,22 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
      * @constructor
      */
     var BoxRatio = function(object) {
+        /* Wrapping Config */
+        var $cfg = this._config;
+
         // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d(Config['box-ratio'].data.Kit) : object;
+        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
 
         // Checking if object is context.
-        isString(object) ? object = $d(Config['box-ratio'].data.Kit, object) : object;
+        isString(object) ? object = $d($cfg.data.Kit, object) : object;
 
         // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + Config['box-ratio'].data.Kit + ')');
+        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
 
         /* Enumerating Objects */
         object.each(function() {
             var box_width = $(this).width();
-            var box_ratio = $(this).getData('box-ratio');
+            var box_ratio = $(this).getData($cfg.data.Kit);
             var box_height;
 
             if (isArray(box_ratio) && box_ratio.length === 2) {
@@ -2273,42 +2320,30 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     $(this).height(box_height);
                 }
             }
+
+            if ($cfg.clean === true) {
+                $(this).remData($cfg.data.Kit);
+            }
         });
 
         return this;
     };
 
-    BoxRatio.prototype = {
-        setup: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-ratio'][name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-ratio'][name] = value;
-                });
-            }
-
-            return this;
-        },
-        config: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-ratio'].data[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-ratio'].data[name] = value;
-                });
-            }
-
-            return this;
-        }
-    }
-
     /* Registering Box Ratio Automator */
-    Automator(Config['box-ratio'].name, BoxRatio);
+    Automator(nameof['box-ratio'], BoxRatio);
 
     /* Adding Automator to jQuery plugin */
-    $.fn.maintainRatio = function() {
-        Automator(Config['box-ratio'].name).build(this);
+    $.fn.maintainRatio = function(ratio) {
+        /* Wrapping Automator */
+        var $atm = Automator(nameof['box-ratio']);
+
+        /* Getting ratio */
+        if (!isArray(ratio)) ratio = this.getData($atm._config.data.Kit);
+        /* Registering ratio */
+        if (isArray(ratio)) this.setData($atm._config.data.Kit, ratio);
+        /* Building Kit */
+        $atm.build(this);
+
         return this;
     }
 
@@ -2323,6 +2358,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         return this;
     };
 
+    /* Kit Prototypes */
     BoxHeightMaintainer.prototype = {
         set: function(name, value) {
             if (isString(name) && isDefined(value)) {
@@ -2336,9 +2372,64 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
             return this;
         },
-        build: function() {
-            var kit = this, id = this.id;
+    };
 
+    /**
+     * Maintain Box Height.
+     * @param object - jQuery object that contains child-box.
+     * @constructor
+     */
+    var boxHeight = function(object) {
+        /* Wrapping Config */
+        var $cfg = this._config;
+
+        /* Extending Config */
+        $cfg.data.Child = 'box-child';
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($cfg.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
+
+        /* Enumerating Object */
+        object.each(function() {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData($cfg.data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $cfg.IDPrefix + ($cfg.counter + 1);
+
+                /* Increasing Counter */
+                $cfg.counter++;
+            }
+
+            /* Creating New Kit */
+            var Kit = new BoxHeightMaintainer().set({
+                id: kit_id,
+                holder: $(this).setData($cfg.data.KitID, kit_id),
+                defcfg: $cfg
+            });
+
+            /* Getting Mode */
+            var mode = Kit.holder.getData($cfg.data.Kit);
+            if (isString(mode)) {
+                Kit.mode = mode;
+            }
+
+            /* Adding Kit into Collections */
+            $cfg.maps[kit_id] = Kit;
+
+            /* Applying ID to childrens */
+            if (Kit.mode !== 'fill-parent') {
+                $d($cfg.data.Child, Kit.holder).setData($cfg.data.KitID, kit_id);
+            }
+        });
+
+        /* Building Kits */
+        foreach($cfg.maps, function (id, kit) {
             /* Fill Parent first */
             if (kit.mode === 'fill-parent') {
                 kit.holder.height(kit.holder.parent().height());
@@ -2346,8 +2437,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 /* Collecting Childrens */
                 var childQuery = {};
 
-                childQuery[Config['box-height'].data.Child] = '?';
-                childQuery[Config['box-height'].data.KitID] = id;
+                childQuery[$cfg.data.Child] = '?';
+                childQuery[$cfg.data.KitID] = id;
 
                 kit.childs = $d(childQuery, kit.holder);
 
@@ -2371,117 +2462,35 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             }
 
             /* Cleaning Up Data Attributes */
-            if (Config['box-height'].clean === true) {
+            if ($cfg.clean === true) {
                 kit.holder.remData([
-                    Config['box-height'].data.Kit,
-                    Config['box-height'].data.KitID
+                    $cfg.data.Kit,
+                    $cfg.data.KitID
                 ]);
                 kit.childs.remData([
-                    Config['box-height'].data.Child,
-                    Config['box-height'].data.KitID
+                    $cfg.data.Child,
+                    $cfg.data.KitID
                 ]);
             }
-
-            return this;
-        }
-    };
-
-    /**
-     * Maintain Box Height.
-     * @param object - jQuery object that contains child-box.
-     * @constructor
-     */
-    var boxHeight = function(object) {
-        // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d(Config['box-height'].data.Kit) : object;
-
-        // Checking if object is context.
-        isString(object) ? object = $d(Config['box-height'].data.Kit, object) : object;
-
-        // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + Config['box-height'].data.Kit + ')');
-
-        /* Enumerating Object */
-        object.each(function() {
-            /* Getting Kit ID or create new if not defined */
-            var kit_id = $(this).getData(Config['box-height'].data.KitID);
-            if (!isString(kit_id)) {
-                kit_id = Config['box-height'].IDPrefix + (Config['box-height'].counter + 1);
-
-                /* Increasing Counter */
-                Config['box-height'].counter++;
-            }
-
-            /* Creating New Kit */
-            var Kit = new BoxHeightMaintainer().set({
-                id: kit_id,
-                holder: $(this).setData(Config['box-height'].data.KitID, kit_id)
-            });
-
-            /* Getting Mode */
-            var mode = Kit.holder.getData(Config['box-height'].data.Kit);
-            if (isString(mode)) {
-                Kit.mode = mode;
-            }
-
-            /* Adding Kit into Collections */
-            Config['box-height'].object[kit_id] = Kit;
-
-            /* Applying ID to childrens */
-            if (Kit.mode !== 'fill-parent') {
-                $d(Config['box-height'].data.Child, Kit.holder).setData(Config['box-height'].data.KitID, kit_id);
-            }
-        });
-
-        /* Building Kits */
-        foreach(Config['box-height'].object, function (id, kit) {
-            kit.build();
         });
 
         return this;
     };
 
-    boxHeight.prototype = {
-        setup: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-height'][name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-height'][name] = value;
-                });
-            } else {
-                return Config['box-height'];
-            }
-        },
-        config: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-height'].data[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-height'].data[name] = value;
-                });
-            } else {
-                return Config['box-height'].data;
-            }
-        },
-        list: function () {
-            return Config['box-height'].object;
-        },
-        with: function(id) {
-            if (isString(id) && Config['box-height'].object.hasOwnProperty(id)) {
-                return Config['box-height'].object[id];
-            } else {
-                console.warn('Box Height Maintener "' + id + '" undefined!');
-            }
-        }
-    }
-
     /* Registering Automator */
-    Automator(Config['box-height'].name, boxHeight);
+    Automator(nameof['box-height'], boxHeight);
 
     /* Registering jQuery Plugin */
     $.fn.maintainHeight = function(mode) {
-        Automator(Config['box-height'].name).build(this);
+        /* Wrapping Automator */
+        var $atm = Automator(nameof['box-height']);
+
+        /* Getting Mode */
+        if (!isString(mode)) mode = this.getData($atm._config.data.Kit);
+        /* Registering Mode */
+        if (isString(mode)) this.setData($atm._config.data.Kit, mode);
+        /* Building Kit */
+        $atm.build(this);
 
         return this;
     }
@@ -2496,6 +2505,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         return this;
     };
 
+    /* Kit Prototypes */
     BoxRowHeightMaintainer.prototype = {
         set: function(name, value) {
             if (isString(name) && isDefined(value)) {
@@ -2508,15 +2518,67 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             }
 
             return this;
-        },
-        build: function() {
-            var kit = this, id = this.id;
+        }
+    };
 
+    /**
+     * Maintain Box Row Height
+     * @param object = jQuery object that contains child-box.
+     * @returns {boxRowHeight}
+     */
+    var boxRowHeight = function(object) {
+        /* Wrapping Config */
+        var $cfg = this._config;
+
+        /* Extending Config */
+        $cfg.data.Child = 'box-row-child';
+        $cfg.data.Group = 'box-row-group';
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($cfg.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
+
+        /* Enumerating Kits */
+        object.each(function() {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData($cfg.data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $cfg.IDPrefix + ($cfg.counter + 1);
+
+                /* Increasing Counter */
+                $cfg.counter++;
+            }
+
+            /* Creating New Kit */
+            var Kit = new BoxRowHeightMaintainer().set({
+                id: kit_id,
+                holder: $(this).setData($cfg.data.KitID, kit_id)
+            });
+
+            /* Getting Mode */
+            var column = Kit.holder.getData($cfg.data.Kit);
+            if (isString(column)) {
+                Kit.column = column;
+            }
+
+            /* Adding Kit into Collections */
+            $cfg.maps[kit_id] = Kit;
+
+            /* Applying ID to childrens */
+            $d($cfg.data.Child, Kit.holder).setData($cfg.data.KitID, kit_id);
+        });
+
+        foreach($cfg.maps, function (id, kit) {
             /* Getting Childrens */
             var childQuery = {};
 
-            childQuery[Config['box-row-height'].data.Child] = '?';
-            childQuery[Config['box-row-height'].data.KitID] = id;
+            childQuery[$cfg.data.Child] = '?';
+            childQuery[$cfg.data.KitID] = id;
 
             kit.childs = $d(childQuery);
 
@@ -2545,7 +2607,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 }
 
                 /* Applying Group ID */
-                hChild.setData(Config['box-row-height'].data.Group, groups);
+                hChild.setData($cfg.data.Group, groups);
 
                 /* Adding item to groups */
                 kit.groups[groups].childs.push(hChild);
@@ -2569,112 +2631,43 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             });
 
             /* Cleaning Up Data Attributes */
-            if (Config['box-row-height'].clean === true) {
+            if ($cfg.clean === true) {
                 kit.holder.remData([
-                    Config['box-row-height'].data.Kit,
-                    Config['box-row-height'].data.KitID
+                    $cfg.data.Kit,
+                    $cfg.data.KitID
                 ]);
                 kit.childs.remData([
-                    Config['box-row-height'].data.Child,
-                    Config['box-row-height'].data.KitID
+                    $cfg.data.Child,
+                    $cfg.data.KitID
                 ]);
             }
-        }
-    };
-
-    var boxRowHeight = function(object) {
-        // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d(Config['box-row-height'].data.Kit) : object;
-
-        // Checking if object is context.
-        isString(object) ? object = $d(Config['box-row-height'].data.Kit, object) : object;
-
-        // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + Config['box-row-height'].data.Kit + ')');
-
-        /* Enumerating Kits */
-        object.each(function() {
-            /* Getting Kit ID or create new if not defined */
-            var kit_id = $(this).getData(Config['box-row-height'].data.KitID);
-            if (!isString(kit_id)) {
-                kit_id = Config['box-row-height'].IDPrefix + (Config['box-row-height'].counter + 1);
-
-                /* Increasing Counter */
-                Config['box-row-height'].counter++;
-            }
-
-            /* Creating New Kit */
-            var Kit = new BoxRowHeightMaintainer().set({
-                id: kit_id,
-                holder: $(this).setData(Config['box-row-height'].data.KitID, kit_id)
-            });
-
-            /* Getting Mode */
-            var column = Kit.holder.getData(Config['box-row-height'].data.Kit);
-            if (isString(column)) {
-                Kit.column = column;
-            }
-
-            /* Adding Kit into Collections */
-            Config['box-row-height'].object[kit_id] = Kit;
-
-            /* Applying ID to childrens */
-            $d(Config['box-row-height'].data.Child, Kit.holder).setData(Config['box-row-height'].data.KitID, kit_id);
-        });
-
-        foreach(Config['box-row-height'].object, function (id, kit) {
-            kit.build();
         });
 
         return this;
-    };
-
-    boxRowHeight.prototype = {
-        setup: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-row-height'][name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-row-height'][name] = value;
-                });
-            } else {
-                return Config['box-row-height'];
-            }
-        },
-        config: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config['box-row-height'].data[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (name, value) {
-                    Config['box-row-height'].data[name] = value;
-                });
-            } else {
-                return Config['box-row-height'].data;
-            }
-        },
-        list: function () {
-            return Config['box-row-height'].object;
-        },
-        with: function(id) {
-            if (isString(id) && Config['box-row-height'].object.hasOwnProperty(id)) {
-                return Config['box-row-height'].object[id];
-            } else {
-                console.warn('Box Height Maintener "' + id + '" undefined!');
-            }
-        }
     };
 
     /* Registering Automator */
-    Automator(Config['box-row-height'].name, boxRowHeight);
+    Automator(nameof['box-row-height'], boxRowHeight);
 
     /* Creating jQuery Plugin */
-    $.fn.maintainRowHeight = function() {
-        Automator(Config['box-row-height'].name).build(this);
+    $.fn.maintainRowHeight = function(column) {
+        /* Wrapping Automator */
+        var $atm = Automator(nameof['box-row-height']);
+
+        /* Getting Column Count */
+        if (!isNumber(column)) column = this.getData($atm._config.data.Kit);
+        /* Registering Column Count */
+        if (isNumber(column)) this.setData($atm._config.data.Kit, column);
+        /* Building Kit*/
+        $atm.build(this);
 
         return this;
     }
-})(jQuery, jQuery.findData);
 
+    /**
+     * @todo: Simplify the scripts and makes it more smart and configurable.
+     */
+})(jQuery, jQuery.findData);
 
 /**
  * Citraland Megah Batam.

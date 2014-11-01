@@ -56,16 +56,32 @@
                 /* Continue creating automator when type of builder is function */
                 if (isFunction(builder)) {
                     var Automator = function() {
-                        this._constructor = function(){};
+                        this._constructor = {};
                         this._constructor.id = name;
                         this._constructor.func = builder;
                         this._constructor.version = version;
 
+                        this._constructor.hand = {};
+                        this._constructor.type = 'automator';
+
                         this.auto = true;
                         this.dont = [];
-                        this._constructor.hand = {};
 
-                        this._constructor.type = 'automator';
+                        this._config = {
+                            counter: 0,
+                            IDPrefix: name + '-',
+
+                            clean: false,
+
+                            data: {
+                                Kit: name,
+                                KitID: name + '-id'
+                            },
+
+                            maps: {
+
+                            }
+                        };
 
                         /* Reconfiguring Autobuild if defined and adding to Autobuild map */
                         if (isBoolean(auto)) {
@@ -120,6 +136,71 @@
 
     /* Creating the Automator Prototypes */
     var defaultModules = {
+        /**
+         * Setting Up the Automator.
+         * @param name - String Automator Property Name. If it's object, then each item should have name and value.
+         * @param value - Automator Property Value. Optional if name is object.
+         * @returns {defaultModules}
+         */
+        setup: function(name, value) {
+            if (isString(name) && isDefined(value)) {
+                this._config[name] = value;
+            } else if (isObject(name)) {
+                var self = this;
+                foreach(name, function (name, value) {
+                    self._config[name] = value;
+                });
+            } else {
+                console.warn('Invalid ' + this._constructor.id + ' config arguments!');
+                return this._config;
+            }
+
+            return this;
+        },
+
+        /**
+         * Setting Up the Automator Data Attribute.
+         * @param id - String data attribute ID.
+         * @param name - String data attribute Name.
+         * @returns {defaultModules}
+         */
+        config: function(id, name) {
+            if (isString(id) && isDefined(name)) {
+                this._config.data[id] = name;
+            } else if (isObject(id)) {
+                var self = this;
+                foreach(id, function (id, name) {
+                    self._config.data[id] = name;
+                });
+            } else {
+                console.warn('Invalid ' + this._constructor.id + ' config arguments!');
+                return this._config.data;
+            }
+
+            return this;
+        },
+
+        /**
+         * Get the lists of kit.
+         * @returns {*}
+         */
+        list: function () {
+            return this._config.maps;
+        },
+
+        /**
+         * Get the kit by ID.
+         * @param id - String Kit ID.
+         * @returns {*}
+         */
+        with: function(id) {
+            if (isString(id) && this._config.maps.hasOwnProperty(id)) {
+                return this._config.maps[id];
+            } else {
+                console.warn(this._constructor.id + ' "' + id + '" is undefined!');
+            }
+        },
+
         /**
          * Automator Builder.
          * @param * {optional} - Build parameters is unlimited. They will be passed to the builder function.
