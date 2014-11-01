@@ -16,8 +16,11 @@
         window.Automator = automator();
     }
 }(function() {
+    /* Automator Version */
+    var version = "0.1.1";
+
     /* Escape when no jQuery defined */
-    if (typeof jQuery === 'undefined') return console.error('BabonKit requires: jQuery 1.10+ and Enquire!');
+    if (typeof jQuery === 'undefined') return console.error('BabonJS requires: jQuery 1.10+ and Enquire!');
 
     /* Defining jQuery Shortname */
     var $ = jQuery;
@@ -56,6 +59,7 @@
                         this._constructor = function(){};
                         this._constructor.id = name;
                         this._constructor.func = builder;
+                        this._constructor.version = version;
 
                         this.auto = true;
                         this.dont = [];
@@ -266,6 +270,10 @@
 
     /* Binding auto-builder to the window on-ready */
     $(document).ready(function() {
+        /* Applying Signature */
+        $('html').setData('signature', 'Using BabonJS version ' + version + '.');
+
+        /* Building Automators */
         foreach(AutomatorMaps.prebuilds, function (name) {
             if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
                 Automator(name).build();

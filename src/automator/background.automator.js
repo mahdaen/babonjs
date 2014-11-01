@@ -4,10 +4,19 @@
 (function($, $d) {
     'use strict';
 
+    /* Automator Name */
+    var AutomatorName = 'dynamic-background';
+
     var Config = {
         responsive: true,
         retina: true,
-        replace: false
+        replace: true,
+        clean: true,
+
+        data: {
+            Kit: 'background',
+            KitID: 'background-id'
+        }
     };
 
     /**
@@ -17,10 +26,17 @@
      * @constructor
      */
     var DynamicBackround = function(object) {
-        !isJQuery(object) ? object = $d('bg-dynamic') : object;
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d(Config.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d(Config.data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + Config.data.Kit + ')');
 
         object.each(function(idx) {
-            var img_src = $(this).getData('bg-dynamic');
+            var img_src = $(this).getData(Config.data.Kit);
             var new_src = '';
 
             if (img_src === 'get-child-img') {
@@ -76,8 +92,8 @@
                         }
                     });
 
-                    if (Config.replace === true) {
-                        target.remData('bg-dynamic');
+                    if (Config.replace === true || Config.clean === true) {
+                        target.remData(Config.data.Kit);
                     }
                 }
             }
@@ -97,12 +113,6 @@
         }
     }
 
-    Automator('bg-dynamic', DynamicBackround).autobuild(true).escape(function() {
-        if (Automator('bg-dynamic').enable === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
+    Automator(AutomatorName, DynamicBackround);
 })(jQuery, jQuery.findData);
 

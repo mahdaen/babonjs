@@ -159,3 +159,82 @@ $('.profile').remData(['profile', 'interests']); // Remove data-profile and data
 #### **Get Box Orientation**
 > **`$.fn.orientation()`** - Get orientation of an element. The result will be added to class and returned as `string`. The result is `landscape` or `portrait`.
 
+## **Automators**
+**Automators** help you to build your needs, especially in DOMs with less-write of `Javascript` because **Automators** definition is using DOM data attribute, and of course configurable. Why should you cares about it? Let's get started with some case. 
+
+```html
+<!-- The video wrap must have 16:9 aspect ratio -->
+<div class="video-wrap"></div>
+```
+
+Without **Automator** you have to write javascript to handle aspect ratio in the sample above. Maybe, first count width, count ratio, apply height etc. Yes, you can do it with CSS, but it's static. CSS can't give you height that depends on the width. But with **Automator** you only need to do like this:
+
+```html
+<!-- The video wrap must have 16:9 aspect ratio -->
+<div class="video-wrap" data-box-ratio="16,9"></div>
+```
+
+And boom! When the pages loaded, you'll get the video-wrap aspect ratio automatically added to the style. Example result:
+
+```html
+<!-- The video wrap width is 1600px -->
+<div class="video-wrap" data-box-ratio="16,9" style="height: 900px;"></div>
+```
+
+Hope this help you! ;)
+
+### **Box Automator**
+**Box Automator** will help you to maintain the **`box-ratio`**, **`box-height`, and **`box-row-height`**.
+
+#### **Box Ratio Automator**
+**Box Ratio Automator** /**`Automator('box-ratio')`** will help you to count the aspect ratio of element with easy way, depends on the element width.
+
+**`data-box-ratio="BOX_RATIO"`**
+
+> Where **`BOX_RATIO`** is a data array format of the box ratio. E.g: **`16,9`** for `16:9`, **`4,3`** for `4:3`, **`4,4`** for `4:4`.
+
+***`Sample`***
+```html
+<div class="video" data-box-ratio="16,9"></div>
+```
+
+#### **Box Height Automator**
+**Box Height Automator** / **`Automator('box-height')`** will help you maintain height of elements. For some case, like when you create a list that using grid layout, sometimes you'll get the layout broken because of the item height is different. So, this automator is what you're looking for.
+
+- **`data-box-height="BOX_HEIGHT_CONFIG"`** - for parent node
+- **`data-box-child`** - for childrens.
+
+> **`BOX_HEIGHT_CONFIG`** is the configuration of automator to tell the automator about how the height should be applied. We have three options for configuration.
+> 
+> Use **`capture-children`** if you want to set the height of parent node depend on the highest height of child nodes.
+> 
+> Use **`fill-children`** if you want to makes all child nodes in the same height depend on the highest height.
+> 
+> Use **`fill-parent`** if you want to makes node height depend on the parent height. The **`data-box-child`** attribute is unused when you use **`fill-parent`**. Don't worry about using automator inside an automator. ;)
+
+***`Sample`***
+
+```html
+<!-- Makes the all child nodes in the same height -->
+<ul class="grid" data-box-height="fill-children">
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+</ul>
+
+<!-- Makes the parent height (.grid) depend on the highest height of child nodes -->
+<ul class="grid" data-box-height="capture-children">
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+	<li class="col-4" data-box-child></li>
+</ul>
+
+<!-- Makes the node height (.grid) depend on the parent height (.wrap) -->
+<div class="wrap">
+	<ul class="grid" data-box-height="fill-parent">
+		<li class="col-4"></li>
+	</ul>
+</div>
+```	
