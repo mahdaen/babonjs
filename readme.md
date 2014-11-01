@@ -17,20 +17,34 @@ Let's get started to find out whats the **BabonJS** have.
 #### **Object Type**
 > Determine the type of objects.
 
-> **`isString(OBJECT)`** - Return `true` if `OBJECT` is string. Otherwise return false.
-> **`isObject(OBJECT)`** - Return `true` if `OBJECT` is object and not an array.
-> **`isArray(OBJECT)`** - Return `true` if `OBJECT` is array.
-> **`isFunction(OBJECT)`** - Return `true` if `OBJECT` is function.
-> **`isNumber(OBJECT)`** - Return `true` if `OBJECT` is number.
-> **`isBoolean(OBJECT)`** - Return `true` if `OBJECT` is boolean.
-> 
-> **`isJQuery(OBJECT)`** - Return `true` if `OBJECT` is jQuery object.
-> **`isHTML(OBJECT)`** - Return `true` if `OBJECT` is HTML element.
-> 
-> **`isColor(OBJECT)`**
-> **`isURL(OBJECT)`**
-> **`isEmail(OBJECT)`**
-> **`isDate(OBJECT)`**
+**`isString(OBJECT)`**
+> Return `true` if `OBJECT` is string. Otherwise return false.
+
+**`isObject(OBJECT)`**
+> Return `true` if `OBJECT` is object and not an array.
+
+**`isArray(OBJECT)`**
+> Return `true` if `OBJECT` is array.
+
+**`isFunction(OBJECT)`**
+> Return `true` if `OBJECT` is function.
+
+**`isNumber(OBJECT)`**
+> Return `true` if `OBJECT` is number.
+
+**`isBoolean(OBJECT)`**
+> Return `true` if `OBJECT` is boolean.
+
+**`isJQuery(OBJECT)`**
+> Return `true` if `OBJECT` is jQuery object.
+
+**`isHTML(OBJECT)`**
+> Return `true` if `OBJECT` is HTML element.
+
+- **`isColor(OBJECT)`**
+- **`isURL(OBJECT)`**
+- **`isEmail(OBJECT)`**
+- **`isDate(OBJECT)`**
 
 #### **Foreach Loop**
 Can be used to loop object, array, number or string. Hope it's useful. ;)
@@ -171,13 +185,54 @@ $('.profile').remData(['profile', 'interests']); // Remove data-profile and data
 
 > Get orientation of an element. The result will be added to class and returned as `string`. The result is `landscape` or `portrait`.
 
-#### **Data Selector**
-**`$(':hasdata($name, $value)')`**
+#### **Data, Name, and Attribute Selector**
+- **`$(':hasdata($name, $value)')`**
+- **`$(':hasattr($name, $value)')`**
+- **`$(':hasname($name, $value)')`**
 
-> Select data attribute with `$(':hasdata(bo
+> Select data attribute, attribute name and attribute from elements. This is just like `$('.foo')`, but for attributes.
+> Example:
+> `$(':hasdata(box-ratio)')` will returns all elements thats have attribute `data-box-ratio`.
+> `$(':hasattr(default)')` will returns all elements thats have attribute `default`.
 
 #### **Data Attribute Finder**
-**Data Attribute Finder** is simplified `:hasdata` selector.
+**Data Attribute Finder** is a simplified `:hasdata` selector.
+
+- **`$data($name, $value, $context)`**
+- **`$.findData($name, $value, $context)`**
+
+> `$name` is the data-attribute name. It's required.
+> `$value` is the value of attribute. It's optional and used if you want to match value in your search. E.g: **`$data('role', 'form')`** - select elements that has `data-role="form"`.
+> `$context` is the jquery object for query context. E.g: **`$data('role', 'form', $('.content'))`** - select elements that has `data-role="form"` from `$('.content')`.
+
+***`Sample`***
+```js
+// Select elements that has data-box-ratio.
+var result = $data('box-ratio');
+```
+```js
+// Select elements that has data-box-ratio="16,9"
+var result = $data('box-ratio', [16,9]);
+```
+```js
+// Select elements that has data-box-ratio="16,9" from 'ul.list'
+var result = $data('box-ratio', [16,9], $('ul.list'));
+```
+```js
+// Select elements that has data-box-child from 'ul.list'.
+var result = $data('box-child', $('ul.list'));
+```
+```js
+// Select elements that has attribute data-box-ratio and data-role="cards" from 'ul.list'.
+var result = $data({
+	'box-ratio': '?',
+	'role': 'cards'
+}, $('ul.list'));
+```
+```js
+// Select elements that has attribute data-role, data-name, and data-age from 'ul.list'.
+var result = $data(['role', 'name', 'age'], $('ul.list'));
+```
 
 ***
 ## **Automators**
