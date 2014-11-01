@@ -234,6 +234,98 @@ var result = $data({
 var result = $data(['role', 'name', 'age'], $('ul.list'));
 ```
 
+### **Media Query**
+**BabonJS** creates three default media query. Hope it's help!
+
+**`$media($query)`**
+> Perform media query. If matched, then functions that added to `.run` will be triggered directly, and the functions added to `.onReady` will be triggered when document ready.
+
+***`Default Media Status`***
+- **`window['is-mobile']`** - `true` if currently on mobile.
+- **`window['is-tablet']`** - `true` if currently on tablet.
+- **`window['is-desktop']`** `true` if currently on desktop.
+
+***`Default Handler`***
+- **`$_desktop`** - Handler for desktop.
+- **`$_mobile`** - Handler for mobile.
+- **`$_tablet`** - Handler for tablet.
+
+***`Handler Methods`***
+- **`.run($func)`** - Run functions for matched query.
+- **`.onReady($func)`** - Run functions for matched query when document ready.
+> `$func` is function that handle the match query.
+
+***`Sample`***
+```js
+// Default desktop handler.
+$_desktop.run(function() {
+	console.log('Currently on desktop view.');
+});
+
+// Default mobile handler.
+$_mobile.onReady(function() {
+	console.log('Mobile view is ready!');
+});
+
+// Custom.
+$media('all and (min-device-width : 720)').onReady(function() {
+	console.log('Custom query match!');
+});
+```
+
+### **Tools**
+**BabonJS** creates some tools that can be used in some case.
+
+#### **Variable**
+**`vars($name, $value)`**
+> Create or read variable in the Tool scope. Variable only can be accessed using `vars` itself.
+
+*`Sample`*
+```js
+vars('name', 'John Smith');
+
+console.log(vars('name'));
+//=> "John Smith"
+
+console.log(name);
+//=> undefined
+```
+
+#### **Constant**
+**`cons($name, $value)`**
+> Create or read constant in Tool scope.  `$name` is string constant name, `$value` is value of constant. `$value` can't be function. 
+
+*`Sample`*
+```js
+cons('name', 'John Smith');
+
+console.log(cons('name'));
+//=> "John Smith"
+
+cons('name', 'Tarzan');
+//=> Constant "name" already registered!
+```
+
+#### **Function**
+**`func($name, $func)`**
+> Create or run read-only function in Tool scope. Like constant, the registered function name can't be replaced or configured. `$name` is string function name, `$func` is a function that handle the call.
+
+*`Sample`*
+```js
+func('me', function(name) {
+	console.log(name || 'John Smith');
+});
+
+func('me')();
+//=> "John Smith"
+
+func('me')('Another John');
+//=> "Another John"
+
+func('me', function() {});
+//=> Function "me" already registered!
+```
+
 ***
 ## **Automators**
 **Automators** help you to build your needs, especially in DOMs with less-write of `Javascript` because **Automators** definition is using DOM data attribute, and of course configurable. Why should you cares about it? Let's get started with some case. 
@@ -407,3 +499,32 @@ Automator('box-ratio').escape(function() {
 	<li class="col-4" data-box-row-child></li>
 </ul>
 ```
+
+### **Background Automator**
+**Background Automator** will help you to dynamically set the background-image of an element, auto-find retina and responsive image. You can set the background by url or get from image from this childrens. We're prefer to get from child image for search engine support, and hide child img in css. We know that using background-image will makes images appear more fine rather than `img` element. It's because the variety of images dimension. So we could use `cover` and `center` for background. ;)
+
+**`data-background="BGD"`**
+> `BGD` is string image-url for custom image url, or `get-img-child` to get from child image.
+
+***`Configs`***
+- **`responsive`** - `true` or `false`. Default is `true`. Tell automator should the responsive image used or not.
+- **`retina`** - `true` or `false`. Default is `true`. Tell automator should the retina image used or not.
+- **`clean`** - `true` or `false`. Default is `false`. Tell automator should the `data-background` attribute removed or not.
+
+***`File Naming`***
+- **`img-name.jpg`** - Default or desktop usage.
+- **`img-name.tab.jpg`** - Image for tablet view.
+- **`img-name@2x.jpg`** - Image for retina display.
+- **`img-name.tab@2x.jpg`** - Both tablet and retina display.
+
+***`Sample`***
+```html
+<!-- Using custom image url -->
+<div class="img-box" data-background="images/img-1.jpg"></div>
+
+<!-- Get from child image -->
+<div clas="img-box" data-background="get-child-img">
+	<img src="images/img-2.jpg" />
+</div>
+```
+

@@ -12,7 +12,7 @@
         define(registry);
     } else {
         /* Browser */
-        window.Registry = registry();
+        window.Registry = window.regs = registry();
     }
 }(function() {
     var AppReg = {};
