@@ -356,7 +356,7 @@ All automator is configurable. So, you can configure them with your taste before
 // Set the automator to cleanup data-attribute after build and rename the default data-attribute name.
 Automator('box-ratio')
 	.setup('clean', true)
-	.config('Kit, 'aspect-ratio');
+	.config('Kit', 'aspect-ratio');
 ```
 
 After configuring automator, then you can write the automator data attribute with your own.
