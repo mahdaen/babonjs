@@ -58,14 +58,14 @@ Can be used to loop object, array, number or string. Hope it's useful. ;)
 
 ***`Sample`***
 ```js
-var obj = { a: 1, b: 1 };
+var obj = { a: 1, b: 2 };
 foreach(obj, function(key, value) {
 	console.log(key + ' is ' + value);
 });
 // Log: a is 1
 // Log: b is 2
 
-var obj = [a, b];
+var obj = ['a', 'b'];
 foreach(obj, function(value, idx) {
 	console.log(value + ' is in index ' + idx);
 });
@@ -80,8 +80,8 @@ foreach(obj, function(current) {
 // Log: 2
 
 var obj = 'One';
-foreach(obj, function(char) {
-	console.log(char);
+foreach(obj, function(current) {
+	console.log(current);
 });
 // Log: 'O'
 // Log: 'n'
@@ -355,7 +355,7 @@ All automator is configurable. So, you can configure them with your taste before
 ```js
 // Set the automator to cleanup data-attribute after build and rename the default data-attribute name.
 Automator('box-ratio')
-	.setup('clean', true')
+	.setup('clean', true)
 	.config('Kit, 'aspect-ratio');
 ```
 
@@ -422,7 +422,7 @@ Automator('box-ratio').escape(function() {
 
 ***
 ### **Box Automator**
-**Box Automator** will help you to maintain the **`box-ratio`**, **`box-height`, and **`box-row-height`**.
+**Box Automator** will help you to maintain the **`box-ratio`**, **`box-height`**, and **`box-row-height`**.
 
 #### **Box Ratio Automator**
 **Box Ratio Automator** /**`Automator('box-ratio')`** will help you to count the aspect ratio of element with easy way, depends on the element width.

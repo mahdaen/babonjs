@@ -2102,7 +2102,20 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
         // Iterating Objects.
         object.each(function () {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData($cfg.data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $cfg.IDPrefix + ($cfg.counter + 1);
 
+                /* Increasing counter */
+                $cfg.counter++;
+            }
+
+            /* Creating new Kit */
+            var Kit = new ContentStack().set({
+                id: kit_id,
+                holder: $(this).setData($cfg.data.KitID, kit_id)
+            });
         });
 
         return this;
