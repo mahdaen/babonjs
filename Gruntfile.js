@@ -25,7 +25,6 @@ module.exports = function(grunt) {
 
                         /* Automator Scripts */
                         'src/automator/accordion.automator.js',
-                        'src/automator/akordi.automator.js',
                         'src/automator/background.automator.js',
                         'src/automator/box.automator.js',
                         'src/automator/content-rotator.automator.js',
@@ -66,6 +65,9 @@ module.exports = function(grunt) {
             }
         },
         watch: {
+            options: {
+                livereload: 2039
+            },
             core: {
                 files: ['src/**/*.js'],
                 tasks: ['concat', 'uglify']

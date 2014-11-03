@@ -528,3 +528,17 @@ Automator('box-ratio').escape(function() {
 </div>
 ```
 
+### **Accordion Automator**
+**Accordion Automator** will help you to create smart accordion and accordion group. So, what actually **Accordion Automator** do? What the difference between accordion and accordion group?
+
+#### **Accordion**
+**Accordion** / `Automator('accordion')` will help you to toggle expand/collapse content inside this. So, when you click the button, the content will be expanded. And when you click again, the content will be collapsed. But in the fact, this automator can be used to build something other than accordion since it will accept `hover` and `mouseenter` event, and of course it's configurable. So you can add your own effect handler. Then you can use it to create like tooltip, popup, etc. ;)
+
+**`data-accordion="$CONFIG"`**
+> `$CONFIG` is the accordion config. Available config:
+> 
+> - **`effect`** - string effect name that handle expand/collapse event.
+> - **`click`** - `true` or `false` - To enable/disable click event.
+> - **`hover`** - `true` or `false` - To enable/disable hover event. If you enable the `hover` event, then you can't enable `enter` event. Also you may define `delay` time before each expand/collapse triggered.
+> - **`enter`** - `true` or `false` - To enable/disable mouseenter event. If you enable `enter` event, then you can't enable `hover` event. You may also define `delay` time before event fired.
+> - **`delay`** - `number` - To define millisecond time before `hover` or `enter` event fired. It's to prevent hovering mistakes. Default is `200` ms.
