@@ -2268,6 +2268,32 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         return this;
     };
 
+    /* Automator Prototypes */
+    accordion.prototype = {
+        addExpandEffect: function(name, handler) {
+            if (isString(name) && isFunction(handler)) {
+                Config.effect.expand[name] = handler;
+            } else if (isObject(name)) {
+                foreach(name, function (name, handler) {
+                    Config.effect.expand[name] = handler;
+                });
+            }
+
+            return this;
+        },
+        addCollapseEffect: function(name, handler) {
+            if (isString(name) && isFunction(handler)) {
+                Config.effect.collapse[name] = handler;
+            } else if (isObject(name)) {
+                foreach(name, function (name, handler) {
+                    Config.effect.collapse[name] = handler;
+                });
+            }
+
+            return this;
+        },
+    };
+
     // Registering Automator and Adding Custom Configs.
     Automator(AccordionAutomatorName, accordion).setup(acSetup).config(acConfig);
 
