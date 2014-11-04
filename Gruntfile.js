@@ -5,7 +5,7 @@ module.exports = function(grunt) {
         concat: {
             build: {
                 files: {
-                    'dist/babonjs-0.0.1.js': [
+                    'dist/babonjs.js': [
                         /* Header. */
                         'src/header.js',
 
@@ -60,7 +60,7 @@ module.exports = function(grunt) {
             },
             my_target: {
                 files: {
-                    'dist/babonjs-0.0.1.min.js': 'dist/babonjs-0.0.1.js'
+                    'dist/babonjs.min.js': 'dist/babonjs.js'
                 }
             }
         },

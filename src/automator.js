@@ -17,7 +17,7 @@
     }
 }(function() {
     /* Automator Version */
-    var version = "0.1.1";
+    var version = "0.1.2";
 
     /* Escape when no jQuery defined */
     if (typeof jQuery === 'undefined') return console.error('BabonJS requires: jQuery 1.10+ and Enquire!');
