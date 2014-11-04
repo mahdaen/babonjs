@@ -8,7 +8,8 @@
     "**/.*",
     "bower_components",
     "test",
-    "tests"
+    "tests",
+    "deprecated"
   ],
   "authors": [
     "Nanang Mahdaen El Agung <nanang@mahdaen.name>"
