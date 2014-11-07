@@ -1,8 +1,7 @@
 (function($, $d) {
     'use strict';
-    var Config = {
-        active: 'down'
-    };
+
+    var AutomatorName = 'toggle-state-destroy';
 
     /**
      * Data toggle state remover. Remove 'down' state and 'down' class from object that have 'data-state' attrubute.
@@ -10,36 +9,32 @@
      * @return {Automator}
      */
     var DownStateDestroyer = function(init) {
+        var $this = this;
+        var $conf = this._config;
+        var $data = $conf.data;
+
         if (init === false) {
-            $d('toggle-state').remData('toggle-state').removeClass(Config.active);
+            $d($data.Toggle).remData($data.Toggle).removeClass($conf.active);
         } else {
-            $d('toggle-state-destroy').each(function() {
+            $d($data.Kit).each(function() {
                 $(this).click(function(e) {
                     e.stopPropagation();
 
-                    $d('toggle-state').remData('toggle-state').removeClass(Config.active);
-                }).setData('toggle-state-destroy', 'initialized');
+                    $d($data.Toggle).remData($data.Toggle).removeClass($conf.active);
+
+                    return false;
+                });
+
+                if ($conf.clean === true || !Automator.debug) {
+                    $(this).remData($data.Kit);
+                }
             });
         }
 
         return this;
     };
-    DownStateDestroyer.prototype = {
-        setup: function(obj) {
-            if (isObject(obj)) {
-                foreach(obj, function (key, value) {
-                    Config[key] = value;
-                });
-            }
 
-            return this;
-        }
-    }
-    Automator('toggle-state-destroyer', DownStateDestroyer).autobuild(true).escape(function() {
-        if (Automator('toggle-state-destroyer').enabled() === false) {
-            return true;
-        } else {
-            return false;
-        }
+    Automator(AutomatorName, DownStateDestroyer).setup('active', 'down').config({
+        Toggle: 'toggle-state'
     });
 })(jQuery, jQuery.findData);

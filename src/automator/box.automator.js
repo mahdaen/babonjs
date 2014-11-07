@@ -169,7 +169,7 @@
                 childQuery[$cfg.data.Child] = '?';
                 childQuery[$cfg.data.KitID] = id;
 
-                kit.childs = $d(childQuery, kit.holder);
+                kit.childs = $d(childQuery, kit.holder).css('height', 'auto');
 
                 /* Getting the highest height */
                 foreach(kit.childs, function (hChild) {
@@ -191,7 +191,7 @@
             }
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean === true) {
+            if ($cfg.clean === true || !Automator.debug) {
                 kit.holder.remData([
                     $cfg.data.Kit,
                     $cfg.data.KitID
@@ -207,7 +207,7 @@
     };
 
     /* Registering Automator */
-    Automator(nameof['box-height'], boxHeight);
+    Automator(nameof['box-height'], boxHeight).setup('loadtime', 'onload');
 
     /* Registering jQuery Plugin */
     $.fn.maintainHeight = function(mode) {
@@ -360,7 +360,7 @@
             });
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean === true) {
+            if ($cfg.clean === true || !Automator.debug) {
                 kit.holder.remData([
                     $cfg.data.Kit,
                     $cfg.data.KitID
@@ -376,7 +376,7 @@
     };
 
     /* Registering Automator */
-    Automator(nameof['box-row-height'], boxRowHeight);
+    Automator(nameof['box-row-height'], boxRowHeight).setup('loadtime', 'onload');
 
     /* Creating jQuery Plugin */
     $.fn.maintainRowHeight = function(column) {

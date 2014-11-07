@@ -10,8 +10,8 @@
     'use strict';
 
     // Automator Name.
-    var AccordionAutomatorName = 'accordion';
-    var AccordionGroupAutomatorName = 'accordion-group';
+    var AccordionName = 'accordion';
+    var AccordionGroupName = 'accordion-group';
 
     /* Accordion Configurations */
     var acSetup = {
@@ -64,6 +64,15 @@
                     self[name] = value;
                 });
             }
+
+            return this;
+        },
+        clean: function() {
+            this.holder.remData([GroupConfig.data.Kit, GroupConfig.data.KitID]);
+
+            foreach(this.content, function (id, kit) {
+                kit.holder.remData(GroupConfig.data.KitID);
+            });
 
             return this;
         },
@@ -145,7 +154,7 @@
     };
 
     /* Registering Automator */
-    Automator(AccordionGroupAutomatorName, accordionGroup);
+    Automator(AccordionGroupName, accordionGroup);
 
     // Accordion object.
     var Accordion = function () {
@@ -187,7 +196,7 @@
         },
         toggle: function() {
             if (this.group !== 'none') {
-                Automator(AccordionGroupAutomatorName).with(this.group).expand(this.id);
+                Automator(AccordionGroupName).with(this.group).expand(this.id);
             } else {
                 if (this.state === Config.data.ExpandClass) {
                     this.collapse();
@@ -229,7 +238,7 @@
                     this.content.setData(Config.data.KitState, this.state);
                 }
             } else {
-                console.warn(AccordionAutomatorName + ' effect handler "' + efc + '" is undefined!');
+                console.warn(AccordionName + ' effect handler "' + efc + '" is undefined!');
             }
 
             return this;
@@ -265,7 +274,7 @@
                     this.content.setData(Config.data.KitState, this.state);
                 }
             } else {
-                console.warn(AccordionAutomatorName + ' effect handler "' + efc + '" is undefined!');
+                console.warn(AccordionName + ' effect handler "' + efc + '" is undefined!');
             }
 
             return this;
@@ -317,7 +326,7 @@
                 Kit.group = gid;
 
                 if (isString(gid)) {
-                    Automator(AccordionGroupAutomatorName).with(gid).insert(kit_id, Kit);
+                    Automator(AccordionGroupName).with(gid).insert(kit_id, Kit);
                 }
             }
 
@@ -404,10 +413,14 @@
             }
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean === true) {
+            if ($cfg.clean === true || !Automator.debug) {
                 kit.holder.remData([$cfg.data.Kit, $cfg.data.KitID]);
                 kit.button.remData([$cfg.data.Button, $cfg.data.KitID]);
                 kit.content.remData([$cfg.data.Content, $cfg.data.KitID]);
+
+                foreach(Automator(AccordionGroupName).list(), function (id, kit) {
+                    kit.clean();
+                });
             }
         });
 
@@ -441,8 +454,8 @@
     };
 
     // Registering Automator and Adding Custom Configs.
-    Automator(AccordionAutomatorName, accordion).setup(acSetup).config(acConfig);
+    Automator(AccordionName, accordion).setup(acSetup).config(acConfig);
 
     /* Creating Public Configs */
-    Config = Automator(AccordionAutomatorName)._config;
+    Config = Automator(AccordionName)._config;
 })(jQuery, jQuery.findData);

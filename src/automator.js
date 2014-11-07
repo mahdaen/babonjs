@@ -68,6 +68,7 @@
                         this.dont = [];
 
                         this._config = {
+                            loadtime: 'onready',
                             counter: 0,
                             IDPrefix: name + '-',
 
@@ -186,6 +187,14 @@
          */
         list: function () {
             return this._config.maps;
+        },
+
+        insert: function(id, kit) {
+            if (isString(id) && isObject(kit)) {
+                this._config.maps[id] = kit;
+            }
+
+            return this;
         },
 
         /**
@@ -348,18 +357,48 @@
         }
     };
     automator.module = Automator.prototype = defaultModules;
+    automator.loadtime = 'onready';
 
     /* Binding auto-builder to the window on-ready */
     $(document).ready(function() {
         /* Applying Signature */
         $('html').setData('signature', 'Using BabonJS version ' + version + '.');
 
-        /* Building Automators */
-        foreach(AutomatorMaps.prebuilds, function (name) {
-            if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
-                Automator(name).build();
-            }
-        });
+        /* Window On Load List */
+        var loadlist = [];
+
+        /* Getting Global Build Time */
+        if (automator.loadtime === 'onload') {
+            $(window).load(function() {
+                /* Building Automators */
+                foreach(AutomatorMaps.prebuilds, function (name) {
+                    if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
+                        Automator(name).build();
+                    }
+                });
+            });
+        } else {
+            /* Building OnReady Automators */
+            foreach(AutomatorMaps.prebuilds, function (name) {
+                if (isString(name) && AutomatorMaps.prebuilds.indexOf(name) !== -1) {
+                    var atom = AutomatorMaps.automator[name];
+
+                    /* Getting Private Build Time */
+                    if (atom._config.loadtime === 'onload') {
+                        loadlist.push(atom);
+                    } else if (atom._config.loadtime === 'onready') {
+                        atom.build();
+                    }
+                }
+            });
+
+            /* Creating OnLoad Builder */
+            $(window).load(function () {
+                foreach(loadlist, function (atom) {
+                    atom.build();
+                });
+            });
+        }
     });
 
     /**
@@ -409,11 +448,38 @@
     automator.list = Object.keys(AutomatorMaps.automator);
     automator.maps = AutomatorMaps;
 
+    /* Whether to keep the data-attribute live on dom element or not. Usable to debug the automator */
+    /* To prevent double build mistakes, we recomend to keep the debug false */
+    automator.debug = false;
+
     /**
      * Core Automator Generator. Use it when you want to create automator and need to add your own prototypes.
      * @type {Automator}
      */
     automator.core = Automator;
+
+    /* Automator Builder After Page Load and can be called by users. */
+    automator.build = function(from) {
+        var context = $('body');
+
+        /* Getting Context */
+        if (isString(from) || isJQuery(from) || isHTML(from)) {
+            context = $(from);
+        }
+
+        /* Building Each Automator */
+        foreach(automator.list, function (name) {
+            var atm = AutomatorMaps.automator[name];
+            var kit_name = atm._config.data.Kit;
+            var object = jQuery.findData(kit_name, context);
+
+            if (object.length > 0) {
+                atm.build(object);
+            }
+        });
+
+        return context;
+    };
 
     return automator;
 }));

@@ -35,6 +35,7 @@ module.exports = function(grunt) {
                         'src/automator/input-placeholder.automator.js',
                         'src/automator/link-scroller.automator.js',
                         'src/automator/lazy-loader.automator.js',
+                        'src/automator/lightbox.automator.js',
                         'src/automator/slider.automator.js',
                         'src/automator/scroll-pos.automator.js',
                         'src/automator/scroll-docker.automator.js',

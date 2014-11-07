@@ -18,7 +18,7 @@
                     data.button.remData('toggle-state').removeClass('down');
                     data.list.remData('toggle-state').removeClass('down');
                 } else if (data.state === 'up') {
-                    Automator('toggle-state-destroyer').build(false);
+                    Automator('toggle-state-destroy').build(false);
 
                     data.parent.setData('toggle-state', 'down').addClass('down');
                     data.button.setData('toggle-state', 'down').addClass('down');
@@ -79,7 +79,7 @@
                         e.stopPropagation();
 
                         /* Toggling the dropdown */
-                        Automator('toggle-state-destroyer').build(false);
+                        Automator('toggle-state-destroy').build(false);
 
                         /* Skip if already active */
                         if ($(this).getData('dropdown-item') === 'current') return false;

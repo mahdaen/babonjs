@@ -36,7 +36,7 @@
         Config.scrollHolder = $.findData('scroll-holder');
 
         if (Config.scrollOwner.length < 1) {
-            Config.scrollOwner = $('window');
+            Config.scrollOwner = $(window);
             Config.enableEffect = false;
         }
         if (Config.scrollHolder.length < 1) {

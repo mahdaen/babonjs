@@ -29,11 +29,6 @@
         /* Wrapping Config */
         var $cfg = this._config;
 
-        /* Merging Config */
-        foreach(Config, function (key, value) {
-            $cfg[key] = value;
-        });
-
         // Querying all kit if not defined.
         !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
 
@@ -105,11 +100,15 @@
                     }
                 }
             }
+
+            if ($cfg.clean === true || !Automator.debug) {
+                $(this).remData($cfg.data.Kit);
+            }
         });
 
         return this;
     };
 
-    Automator(AutomatorName, DynamicBackround);
+    Automator(AutomatorName, DynamicBackround).setup(Config);
 })(jQuery, jQuery.findData);
 

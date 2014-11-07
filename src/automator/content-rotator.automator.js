@@ -45,7 +45,7 @@
             NavigatePrev: 'backward'
         },
 
-        rotator: {},
+        maps: {},
         animator: {
             default: function() {
                 this.swap();
@@ -210,10 +210,17 @@
      * @constructor
      */
     var contentRotator = function (object) {
-        !isJQuery(object) ? object = $d(Config.data.Kit) : object;
+        /* Wrapping Config */
+        var $cfg = this._config = Config;
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($cfg.data.Kit, object) : object;
 
         // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + Config.data.Kit + ')');
+        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
 
         // Initializing Rotator.
         object.each(function() {
@@ -286,14 +293,14 @@
             rotator.set('progress', prog);
 
             // Adding Rotator Object to list.
-            Config.rotator[rt_id] = rotator;
+            Config.maps[rt_id] = rotator;
 
             // Increasing Counter.
             Config.counter++;
         });
 
         // Reinitializing Rotator to prevent wrong items index number for rotator inside rotator.
-        foreach(Config.rotator, function (rt_id, rotator) {
+        foreach(Config.maps, function (rt_id, rotator) {
             // Checking if already configured and determine does it should be reconfigured or not.
             if (Config.allowReconfigure === false && rotator.holder.getData(Config.data.KitConfigured) === true) {
                 return;
@@ -332,7 +339,9 @@
             });
 
             // Activating Default Item.
-            default_item.setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
+            if (default_item) {
+                default_item.setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
+            }
 
             // Initializing Rotator Selectors.
             var selectorQuery = {};
@@ -373,7 +382,7 @@
         });
 
         // Initializing Auto Rotate.
-        foreach(Config.rotator, function (name, rotator) {
+        foreach(Config.maps, function (name, rotator) {
             if (isNumber(rotator.config.auto)) {
                 rotator.start();
             }
@@ -392,39 +401,6 @@
                     if (isFunction(func)) {
                         Config.animator[name] = func;
                     }
-                });
-            }
-
-            return this;
-        },
-        with: function(rotator_id) {
-            if (isString(rotator_id)) {
-                if (Config.rotator[rotator_id]) {
-                    return Config.rotator[rotator_id];
-                }
-            }
-
-            return this;
-        },
-        setup: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (configName, value) {
-                    Config[configName] = value;
-                });
-            } else {
-                return Config;
-            }
-
-            return this;
-        },
-        construct: function(name, value) {
-            if (isString(name) && isDefined(value)) {
-                Config.data[name] = value;
-            } else if (isObject(name)) {
-                foreach(name, function (configName, value) {
-                    Config.data[configName] = value;
                 });
             }
 
