@@ -232,7 +232,7 @@
                     .removeClass(Config.data.CollapseClass)
                     .addClass(this.state);
 
-                if (!Config.clean) {
+                if (!Config.clean && Automator.debug) {
                     this.holder.setData(Config.data.KitState, this.state);
                     this.button.setData(Config.data.KitState, this.state);
                     this.content.setData(Config.data.KitState, this.state);
@@ -268,7 +268,7 @@
                     .removeClass(Config.data.ExpandClass)
                     .addClass(this.state);
 
-                if (!Config.clean) {
+                if (!Config.clean && Automator.debug) {
                     this.holder.setData(Config.data.KitState, this.state);
                     this.button.setData(Config.data.KitState, this.state);
                     this.content.setData(Config.data.KitState, this.state);
@@ -413,7 +413,7 @@
             }
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean === true || !Automator.debug) {
+            if ($cfg.clean || !Automator.debug) {
                 kit.holder.remData([$cfg.data.Kit, $cfg.data.KitID]);
                 kit.button.remData([$cfg.data.Button, $cfg.data.KitID]);
                 kit.content.remData([$cfg.data.Content, $cfg.data.KitID]);

@@ -7,7 +7,7 @@
     /* Automator Name */
     var AutomatorName = 'dynamic-background';
 
-    var Config = {
+    var defConf = {
         responsive: true,
         retina: true,
         replace: false,
@@ -109,6 +109,6 @@
         return this;
     };
 
-    Automator(AutomatorName, DynamicBackround).setup(Config);
+    Automator(AutomatorName, DynamicBackround).setup(defConf);
 })(jQuery, jQuery.findData);
 

@@ -267,24 +267,24 @@
 
     // Css Object Getter.
     $.fn.style = function() {
-        var style = this.attr('style').replace(/\s+\;/g, ';');
-        var stlis = {};
+        if (this.length >= 1) {
+            var origin = this.get(0).style;
+            var styles = {};
 
-        style = style.split(';');
-
-        for (var i = 0; i < style.length; ++i) {
-            var next = style[i];
-
-
-            if (typeof next === 'string' && next.length > 0) {
-                next = next.replace(/\:\s+/g, ':').split(':');
-                var key = next[0].replace(/\s+/g, '');
-
-                stlis[key] = next[1];
+            for(var prop in origin) {
+                if (origin.hasOwnProperty(prop)) {
+                    if (origin[prop] !== '' && origin[prop] !== null && prop !== 'cssText') {
+                        if (prop.search(/[\d]/) === -1) {
+                            styles[prop] = origin[prop];
+                        }
+                    }
+                }
             }
-        }
 
-        return stlis;
+            return styles;
+        } else {
+            return undefined;
+        }
     };
 
     // Create Selection.

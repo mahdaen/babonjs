@@ -20,6 +20,7 @@
     };
     var DefConf = {
         loadtime: 'onload',
+        cache: false,
         before: {},
         after: {},
         open: {},
@@ -103,7 +104,6 @@
         load: function(target) {
             var $this = this;
 
-
             if (isJQuery(target)) {
                 target = target.getData($this._config.data.Command);
 
@@ -115,6 +115,9 @@
                 $this.target = target;
 
                 if (target.hasOwnProperty('source')) {
+                    /* Hide Current Window before load */
+                    $this.hide();
+
                     /* Triggering Before Load */
                     if (target.hasOwnProperty('before') && $this._config.before.hasOwnProperty(target.before)) {
                         $this._config.before[target.before].apply(this);
@@ -124,6 +127,7 @@
                     $.ajax({
                         url: target.source,
                         dataType: 'text/html',
+                        cache: $this._config.cache,
 
                         complete: function(data) {
                             /* Triggering After Load */
@@ -131,6 +135,12 @@
                                 $this._config.after[target.after].apply(this);
                             }
 
+                            /* Opening Lightbox */
+                            $this.target.data = data;
+                            $this.open();
+                        },
+                        error: function(data) {
+                            $this.container.html('Unable to procceed request!')
                             /* Opening Lightbox */
                             $this.target.data = data;
                             $this.open();
@@ -147,7 +157,20 @@
 
             return this;
         },
-        exit: function() {
+        hide: function () {
+            var $this = this;
+            var target = $this.target;
+
+            /* Exit Effect Handler */
+            if (target.hasOwnProperty('effect') && $this._config.effect.exit.hasOwnProperty(target.effect)) {
+                $this._config.effect.exit[target.effect].apply(this);
+            } else {
+                $this.holder.removeClass('open');
+            }
+
+            return this;
+        },
+        exit: function(nowait) {
             var $this = this;
             var target = $this.target;
 
@@ -157,10 +180,15 @@
             } else {
                 $this.holder.removeClass('open');
 
-                $this.cleaner = setTimeout(function() {
+                if (!nowait) {
+                    $this.cleaner = setTimeout(function() {
+                        $this.container.attr('class', $this.defclass);
+                        $this.container.empty();
+                    }, 1000);
+                } else {
                     $this.container.attr('class', $this.defclass);
                     $this.container.empty();
-                }, 1000);
+                }
             }
 
             /* Exit Event Handler */
@@ -263,8 +291,29 @@
 
             at.destroyer.push($(this).setData(at._config.data.KitID, id));
 
-        }).click(function () {
+        }).click(function (e) {
+            e.stopPropagation();
+
             Automator(AutomatorName).exit();
+
+            return false;
+        });
+    }, false);
+
+    Automator(DataCfg.Command, function() {
+        var at = Automator(AutomatorName);
+
+        $d(at._config.data.Command).each(function() {
+            var id = at.ID;
+
+            at.commander.push($(this).setData(at._config.data.KitID, id));
+
+        }).click(function (e) {
+            e.stopPropagation();
+
+            Automator(AutomatorName).load($(this));
+
+            return false;
         });
     }, false);
 })(jQuery, jQuery.findData);

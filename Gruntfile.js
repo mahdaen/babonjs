@@ -1,4 +1,6 @@
 module.exports = function(grunt) {
+    var source = 'source/';
+
     grunt.initConfig({
         pkg: grunt.file.readJSON('package.json'),
 
@@ -7,45 +9,43 @@ module.exports = function(grunt) {
                 files: {
                     'dist/babonjs.js': [
                         /* Header. */
-                        'src/header.js',
+                        source + 'header.js',
 
                         /* Native Scripts. */
-                        'src/native.js',
-                        'src/selector.js',
-                        'src/jqplugin.js',
-                        'src/jqwheel.js',
-                        'src/tools.js',
-                        'src/data.js',
+                        source + 'native.js',
+                        source + 'selector.js',
+                        source + 'jqplugin.js',
+                        source + 'jqwheel.js',
+                        source + 'tools.js',
+                        source + 'data.js',
 
                         /* Core Scripts */
-                        'src/registry.js',
-                        'src/automator.js',
-                        'src/generator.js',
-                        'src/media.js',
+                        source + 'registry.js',
+                        source + 'automator.js',
+                        source + 'generator.js',
+                        source + 'media.js',
 
                         /* Automator Scripts */
-                        'src/automator/accordion.automator.js',
-                        'src/automator/background.automator.js',
-                        'src/automator/box.automator.js',
-                        'src/automator/content-rotator.automator.js',
-                        'src/automator/dropdown.automator.js',
-                        'src/automator/editable.automator.js',
-                        'src/automator/googlemap.automator.js',
-                        'src/automator/image.automator.js',
-                        'src/automator/input-placeholder.automator.js',
-                        'src/automator/link-scroller.automator.js',
-                        'src/automator/lazy-loader.automator.js',
-                        'src/automator/lightbox.automator.js',
-                        'src/automator/slider.automator.js',
-                        'src/automator/scroll-pos.automator.js',
-                        'src/automator/scroll-docker.automator.js',
-                        'src/automator/tab.automator.js',
-                        'src/automator/toggle-state.automator.js',
-                        'src/automator/virtual-map.automator.js',
-
-                        /* Deprecated */
-                        'src/automator/placeholder-toggle.automator.js',
-                        'src/automator/wizard.automator.js',
+                        source + 'automator/accordion.automator.js',
+                        source + 'automator/background.automator.js',
+                        source + 'automator/box.automator.js',
+                        //source + 'automator/carousel.automator.js',
+                        source + 'automator/content-rotator.automator.js',
+                        source + 'automator/content-tab.automator.js',
+                        source + 'automator/dropdown.automator.js',
+                        source + 'automator/editable.automator.js',
+                        source + 'automator/googlemap.automator.js',
+                        source + 'automator/grid.automator.js',
+                        source + 'automator/image.automator.js',
+                        source + 'automator/input-placeholder.automator.js',
+                        source + 'automator/link-scroller.automator.js',
+                        source + 'automator/lazy-loader.automator.js',
+                        source + 'automator/lightbox.automator.js',
+                        source + 'automator/slider.automator.js',
+                        source + 'automator/scroll-pos.automator.js',
+                        source + 'automator/scroll-docker.automator.js',
+                        source + 'automator/toggle-state.automator.js',
+                        source + 'automator/virtual-map.automator.js',
                     ]
                 }
             }
@@ -70,7 +70,7 @@ module.exports = function(grunt) {
                 livereload: 2039
             },
             core: {
-                files: ['src/**/*.js'],
+                files: [source + '**/*.js'],
                 tasks: ['concat', 'uglify']
             }
         }

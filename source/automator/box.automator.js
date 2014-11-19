@@ -169,9 +169,10 @@
                 childQuery[$cfg.data.Child] = '?';
                 childQuery[$cfg.data.KitID] = id;
 
-                kit.childs = $d(childQuery, kit.holder).css('height', 'auto');
+                kit.childs = $d(childQuery, kit.holder);
 
                 /* Getting the highest height */
+                kit.childs.css('height', '');
                 foreach(kit.childs, function (hChild) {
                     var height = $(hChild).height();
 

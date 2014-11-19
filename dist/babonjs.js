@@ -574,24 +574,24 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
     // Css Object Getter.
     $.fn.style = function() {
-        var style = this.attr('style').replace(/\s+\;/g, ';');
-        var stlis = {};
+        if (this.length >= 1) {
+            var origin = this.get(0).style;
+            var styles = {};
 
-        style = style.split(';');
-
-        for (var i = 0; i < style.length; ++i) {
-            var next = style[i];
-
-
-            if (typeof next === 'string' && next.length > 0) {
-                next = next.replace(/\:\s+/g, ':').split(':');
-                var key = next[0].replace(/\s+/g, '');
-
-                stlis[key] = next[1];
+            for(var prop in origin) {
+                if (origin.hasOwnProperty(prop)) {
+                    if (origin[prop] !== '' && origin[prop] !== null && prop !== 'cssText') {
+                        if (prop.search(/[\d]/) === -1) {
+                            styles[prop] = origin[prop];
+                        }
+                    }
+                }
             }
-        }
 
-        return stlis;
+            return styles;
+        } else {
+            return undefined;
+        }
     };
 
     // Create Selection.
@@ -2152,7 +2152,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     .removeClass(Config.data.CollapseClass)
                     .addClass(this.state);
 
-                if (!Config.clean) {
+                if (!Config.clean && Automator.debug) {
                     this.holder.setData(Config.data.KitState, this.state);
                     this.button.setData(Config.data.KitState, this.state);
                     this.content.setData(Config.data.KitState, this.state);
@@ -2188,7 +2188,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     .removeClass(Config.data.ExpandClass)
                     .addClass(this.state);
 
-                if (!Config.clean) {
+                if (!Config.clean && Automator.debug) {
                     this.holder.setData(Config.data.KitState, this.state);
                     this.button.setData(Config.data.KitState, this.state);
                     this.content.setData(Config.data.KitState, this.state);
@@ -2333,7 +2333,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             }
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean === true || !Automator.debug) {
+            if ($cfg.clean || !Automator.debug) {
                 kit.holder.remData([$cfg.data.Kit, $cfg.data.KitID]);
                 kit.button.remData([$cfg.data.Button, $cfg.data.KitID]);
                 kit.content.remData([$cfg.data.Content, $cfg.data.KitID]);
@@ -2389,7 +2389,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     /* Automator Name */
     var AutomatorName = 'dynamic-background';
 
-    var Config = {
+    var defConf = {
         responsive: true,
         retina: true,
         replace: false,
@@ -2491,7 +2491,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         return this;
     };
 
-    Automator(AutomatorName, DynamicBackround).setup(Config);
+    Automator(AutomatorName, DynamicBackround).setup(defConf);
 })(jQuery, jQuery.findData);
 
 
@@ -2666,9 +2666,10 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 childQuery[$cfg.data.Child] = '?';
                 childQuery[$cfg.data.KitID] = id;
 
-                kit.childs = $d(childQuery, kit.holder).css('height', 'auto');
+                kit.childs = $d(childQuery, kit.holder);
 
                 /* Getting the highest height */
+                kit.childs.css('height', '');
                 foreach(kit.childs, function (hChild) {
                     var height = $(hChild).height();
 
@@ -2896,619 +2897,1211 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 })(jQuery, jQuery.findData);
 
 /**
- * Citraland Megah Batam.
- * Content Rotator Automator Scripts.
+ * BabonJS.
+ * ContentRotator Automator Scripts.
  * Language: Javascript.
- * Created by mahdaen on 10/13/14.
+ * Created by mahdaen on 11/16/14.
  * License: GNU General Public License v2 or later.
  */
 
 (function ($, $d) {
     'use strict';
 
-    // Automator Name Variable.
+    // Automator Name.
     var AutomatorName = 'content-rotator';
 
-    // Rotator Main Configuration.
-    var Config = {
-        counter: 0,
-        IDPrefix: 'rotator-',
-        allowReconfigure: false,
+    /* Default Configs */
+    var defConf = {
+        IDPrefix    : 'cr-',
 
-        // Constructor Naming.
-        data: {
-            // HTML Data Attributes Naming.
-            Kit: 'content-rotator',
-            KitID: 'content-rotator-id',
-            KitConfigured: 'content-rotator-configured',
+        /* Effect Collections */
+        effect      : {
+            /* Default Effect - Only changing the class */
+            'default': function() {
+                this.swap();
 
-            Item: 'content-rotator-item',
-            ItemID: 'content-rotator-item-id',
-            ItemState: 'content-rotator-item-state',
+                return this;
+            },
 
-            Prev: 'content-rotator-prev',
-            Next: 'content-rotator-next',
-            Select: 'content-rotator-select',
+            /* Simple Effect - Using jQuery $.fadeIn() and $.fadeOut() before swapping class */
+            'simple': function() {
+                var $this = this;
 
-            Progress: 'content-rotator-progress',
+                $this.active.fadeOut(function() {
+                    $this.target.fadeIn(function() {
+                        $this.swap();
+                    });
+                });
 
-            // Data State Naming.
-            ItemActive: 'active',
-
-            ProgressStopped: 'stopped',
-            ProgressPaused: 'paused',
-
-            NavigateNext: 'forward',
-            NavigatePrev: 'backward'
+                return this;
+            },
         },
 
-        maps: {},
-        animator: {
-            default: function() {
-                this.swap();
-            },
-            fade: function() {
-                var self = this;
-
-                self.active.fadeOut();
-                self.target.fadeIn();
-
-                self.swap();
-            }
-        }
+        /* Callback Collections */
+        callback    : {}
     };
 
-    // Rotator Object.
-    var ContentRotator = function() {
-        // Rotator Object Configuration.
+    /* Default Data-Attribute and Class naming */
+    var defData = {
+        id          : 'content-rotator-id',
+        kit         : 'content-rotator',
+
+        item        : 'content-rotator-item',
+        prev        : 'content-rotator-prev',
+        next        : 'content-rotator-next',
+        select      : 'content-rotator-select',
+        default     : 'default',
+        progress    : 'content-rotator-progress',
+
+        state       : 'content-rotator-state',
+        active      : 'active',
+        paused      : 'paused',
+        stopped     : 'stopped',
+        forward     : 'forward',
+        backward    : 'backward'
+    };
+
+    // ContentRotator object.
+    var ContentRotator = function () {
         this.config = {
-            // Auto rotate Items.
             auto: false,
+            effect: 'default',
+            progress: false,
+            onnavigate: 'none',
 
-            // Animation Name.
-            animationName: 'default',
-
-            // Animation Speed.
-            animationSpeed: 0
+            select: true,
+            before: false,
+            after: false
         };
 
-        // Attributes Naming.
-        this.cons = Config.data;
-
-        // Creating temporary holder.
+        this.prev = $('<div>');
+        this.next = $('<div>');
+        this.items = $('<div>');
         this.holder = $('<div>');
+        this.selects = $('<div>');
+
+        this.active = $('<div>');
+        this.target = $('<div>');
+
+        this.activeS = $('<div>');
+        this.targetS = $('<div>');
+
+        this.current = 0;
+        this.total = 0;
+        this.navdir = 'none';
 
         return this;
     };
 
-    // Rotator Prototypes.
+    // ContentRotator Object Prototypes.
     ContentRotator.prototype = {
-        navigate: function(direction) {
-            var next = 0;
+        // Change or add Kit properties.
+        set: function (name, value) {
+            var $this = this;
 
-            if (isString(direction)) {
-                // Handle for next and prev navigation.
-                if (direction === Config.data.NavigateNext) {
-                    if (this.current === this.total) {
-                        next = 1;
-                    } else {
-                        next = (this.current + 1);
-                    }
-                } else if (direction === Config.data.NavigatePrev) {
-                    if (this.current === 1) {
-                        next = this.total;
-                    } else {
-                        next = (this.current - 1);
-                    }
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this[name] = value;
+                });
+            }
+
+            return this;
+        },
+        use: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                this.config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this.config[name] = value;
+                });
+            }
+
+            return this;
+        },
+
+        /* Function to define the target item */
+        navigate: function($dir) {
+            /* Escape when no dir defined */
+            if (!isString($dir) && !isNumber($dir)) return;
+
+            /* Variable Wrapper */
+            var $this = this, $next = 0, $data = $this.$data;
+
+            /* Stop auto rotate during navigate */
+            $this.stop();
+
+            /* Initializing Direction */
+            if ($dir === $data.forward) {
+                /* Navigate Forward */
+                if ($this.current < ($this.total - 1)) {
+                    $next = $this.current + 1;
                 } else {
-                    return this;
+                    $next = 0;
+                }
+            } else if ($dir === $data.backward) {
+                /* Navigate Backward */
+                if ($this.current >= 1) {
+                    $next = $this.current - 1;
+                } else {
+                    $next = ($this.total - 1);
+                }
+            } else if (isNumber($dir)) {
+                /* Navigate to index number */
+                $next = $dir;
+            }
+
+            $this.navdir = $dir;
+
+            /* Get the target item and select */
+            $this.target = $($this.items.get($next));
+
+            /* If Select Enabled */
+            if ($this.config.select) {
+                $this.targetS = $($this.selects.get($next));
+            }
+
+            /* Before Target item and select */
+            if ($this.config.before) {
+                $this.before = $($this.items.get($next - 1));
+                if ($this.before.length < 1) {
+                    $this.before = $($this.items.get($this.items.length - 1));
                 }
 
-                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + next + ')');
-                this.current = next;
-            } else if (isNumber(direction) && direction >= 1 && direction <= this.total) {
-                // Handle for index specific navigation.
-                this.target = this.items.filter(':hasdata(' + Config.data.ItemID + ', ' + direction + ')');
-                this.current = direction;
+                if ($this.config.select) {
+                    $this.beforeS = $($this.selects.get($next - 1));
+                    if ($this.beforeS.length < 1) {
+                        $this.beforeS = $($this.selects.get($this.items.length - 1));
+                    }
+                }
             }
 
-            // Animating Items.
-            this.animate();
+            /* After Target item and select */
+            if ($this.config.after) {
+                $this.after = $($this.items.get($next + 1));
+                if ($this.after.length < 1) {
+                    $this.after = $($this.items.get(0));
+                }
 
-            return this;
-        },
-        animate: function() {
-            var anim = this.config.animationName;
+                if ($this.config.select) {
+                    $this.afterS = $($this.selects.get($next + 1));
+                    if ($this.afterS.length < 1) {
+                        $this.afterS = $($this.selects.get(0));
+                    }
+                }
+            }
 
-            if (Config.animator.hasOwnProperty(anim) && isFunction(Config.animator[anim])) {
-                Config.animator[anim].apply(this);
+            /* Animate the rotator, or return if no target found with the given index or target is more than one (that confusing). */
+            if ($this.target.length === 1) {
+                /* Replacing Current Index */
+                $this.current = $next;
+
+                /* Animating */
+                $this.animate();
             } else {
-                this.swap();
+                return;
             }
 
             return this;
         },
+
+        /* Function to animate active item and target item */
+        animate: function() {
+            /* Variable Wrapper */
+            var $this = this, $conf = $this.$conf, $data = $this.$data, $anim = $this.config.effect;
+
+            /* Does the selected effect exist? Call it if exist, otherwise use default */
+            if ($conf.effect.hasOwnProperty($anim)) {
+                $conf.effect[$anim].apply($this);
+            } else {
+                $conf.effect.default.apply($this);
+            }
+
+            return this;
+        },
+
+        /* Function to change the class of the active item and target item */
         swap: function() {
-            // Deactivating Active Item.
-            this.active.removeClass(Config.data.ItemActive).remData(Config.data.ItemState);
+            /* Variable Wrapper */
+            var $this = this, $conf = $this.$conf, $data = $this.$data;
 
-            // Activating Target Item.
-            this.target.addClass(Config.data.ItemActive).setData(Config.data.ItemState, Config.data.ItemActive);
+            /* Removing active class from the active item */
+            $this.active.removeClass($data.active);
+            $this.activeS.removeClass($data.active);
 
-            // Replacing active item with target item.
-            this.active = this.target;
+            /* Adding active calss to the target item */
+            $this.target.addClass($data.active);
+            $this.targetS.addClass($data.active);
 
-            // Starting auto rotate content.
-            if (isNumber(this.config.auto)) {
-                this.restart();
+            /* Modifying Data Attribute if shouldnt' to be clean */
+            if (!$conf.clean && Automator.debug) {
+                /* Removing data state from the active item */
+                $this.active.remData($data.state);
+                $this.activeS.remData($data.state);
+
+                /* Adding data state to the target item */
+                $this.target.setData($data.state, $data.active);
+                $this.targetS.setData($data.state, $data.active);
+            }
+
+            /* Replacing active item with target item */
+            $this.active = $this.target;
+            $this.activeS = $this.targetS;
+
+            /* Calling callback if defined and exist */
+            if ($conf.callback.hasOwnProperty($this.config.onnavigate)) {
+                $conf.callback[$this.config.onnavigate].apply($this);
+            }
+
+            /* Restarting auto-rotate if enabled */
+            if (isNumber($this.config.auto)) {
+                $this.start();
             }
 
             return this;
         },
         start: function() {
-            var duration = (this.config.auto * 1000),
-                w = this.progress.width();
+            if (!isNumber(this.config.auto)) return;
 
-            if (w > 0) {
-                var style = this.progress.style(),
-                    width = Number(style.width.replace('%', ''));
+            /* Variable Wrapper */
+            var $this = this, $data = $this.$data;
 
-                duration = duration - ((width / 100) * duration);
+            /* Get duration time in ms */
+            var duration = ($this.config.auto * 1000);
+
+            /* Get the progress width */
+            var width = $this.progress.width();
+
+            /* Count the current position and duration to be used when it's paused */
+            if (width > 0) {
+                /* Get the style lists */
+                var style = $this.progress.style();
+
+                /* Count new duration */
+                duration = duration - (Number(style.width.replace('%', '') / 100) * duration);
             }
 
-            this.progress.removeClass(Config.data.ProgressStopped).animate({
-                width: '100%'
-            }, duration, function() {
-                // Getting Rotator ID and Resetting Width.
-                var rt_id = $(this).css({ width: 0 }).getData(Config.data.KitID);
+            /* Animating Progress as a timer :D */
+            $this.progress
+                /* Remove stop class */
+                .removeClass($data.stopped)
+                /* Remove puase state */
+                .removeClass($data.paused)
+                /* Change width to 100% and navigate item when reached 100% */
+                .animate({ width: '100%' }, duration, function() {
+                    /* Resetting progress width to 0 */
+                    $this.progress.width(0);
 
-                Automator(AutomatorName).with(rt_id).navigate(Config.data.NavigateNext);
-            });
-
-            return this;
-        },
-        restart: function() {
-            this.stop();
-            this.start();
+                    /* Navigate to next item */
+                    $this.navigate($data.forward);
+                });
 
             return this;
         },
         stop: function() {
-            this.progress.stop().addClass(Config.data.ProgressStopped).width(0);
+            if (!isNumber(this.config.auto)) return;
+
+            /* Variable Wrapper */
+            var $this = this, $data = $this.$data;
+
+            /* Stopping progress animation and adding stop state */
+            $this.progress
+                /* Stopping animation */
+                .stop()
+                /* Remove pause state */
+                .removeClass($data.paused)
+                /* Adding stop state */
+                .addClass($data.stopped)
+                /* Reset width to 0 */
+                .animate({ width: 0 }, 200, function() {
+                    $this.progress.css('width', '');
+                });
 
             return this;
         },
         pause: function() {
-            this.progress.stop().addClass(Config.data.ProgressPaused);
+            if (!isNumber(this.config.auto)) return;
+
+            /* Variable Wrapper */
+            var $this = this, $data = $this.$data;
+
+            /* Stopping progress animation and adding pause state */
+            $this.progress
+                /* Stopping animation */
+                .stop()
+                /* Remove stop state */
+                .removeClass($data.stopped)
+                /* Adding stop state */
+                .addClass($data.paused);
 
             return this;
         },
-        set: function(key, value) {
-            if (isString(key)) {
-                if (value) this[key] = value;
-            } else if (isObject(key)) {
-                var self = this;
+        restart: function() {
+            if (!isNumber(this.config.auto)) return;
 
-                foreach(key, function (key, value) {
-                    self[key] = value;
-                });
-            }
+            /* Variable Wrapper */
+            var $this = this;
+
+            /* Stopping current timer */
+            $this.stop();
+
+            /* Starting new timer */
+            $this.start();
 
             return this;
-        }
+        },
     };
 
-    /**
-     * Content Rotator Automator Constructor.
-     * @param object - jQuery object that has attribute 'data-rotator-kit'.
-     * @required htmlTag - 'data-rotator-kit' as holder, 'data-rotator-item' as rotator item, 'data-rotator-select' as selector, 'data-rotator-next' as navigate forward, 'data-rotator-prev' as navigate backward.
-     * @config data-object - 'auto' with number duration, 'animationName' for custom animation, 'animationSpeed' for custom animation speed. Sample: `data-rotator-kit="auto: 5000, animationName: 'fade', animationSpeed: 1000"`.
-     * @returns {contentRotator}
-     * @constructor
-     */
+    // Automator Constructor.
     var contentRotator = function (object) {
-        /* Wrapping Config */
-        var $cfg = this._config = Config;
+        var $this = this;
+        var $conf = this._config;
+        var $data = this._config.data;
 
         // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+        !isJQuery(object) && !isString(object) ? object = $d($data.kit) : object;
 
         // Checking if object is context.
-        isString(object) ? object = $d($cfg.data.Kit, object) : object;
+        isString(object) ? object = $d($data.kit, object) : object;
 
         // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
+        object = object.filter(':hasdata(' + $data.kit + ')');
 
-        // Initializing Rotator.
-        object.each(function() {
-            // Check if already configured and skip if not allowed.
-            if (Config.allowReconfigure === false && $(this).getData(Config.data.KitConfigured) === true) return;
+        // Iterating Objects.
+        object.each(function () {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData($data.id);
+            if (!isString(kit_id)) {
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
 
-            // Creating Rotator ID if not defined.
-            var rt_id = $(this).getData(Config.data.KitID);
-
-            if (!isString(rt_id)) {
-                rt_id = Config.IDPrefix + (Config.counter + 1);
-
-                // Applying Rotator ID to Rotator Holder.
-                $(this).setData(Config.data.KitID, rt_id);
+                $conf.counter++;
             }
 
-            // Creating Rotator Object.
-            var rotator = new ContentRotator().set('holder', $(this));
+            /* Creating New Kit */
+            var kit = new ContentRotator().set({
+                $conf: $conf,
+                $data: $data,
 
-            // Getting Rotator Config.
-            var config = $(this).getData(Config.data.Kit);
+                id: kit_id,
+                holder: $(this).setData($data.id, kit_id)
+            });
 
-            // Apllying rotator object config.
+            /* Getting Config */
+            var config = kit.holder.getData($data.kit);
             if (isObject(config)) {
-                foreach(config, function (key, value) {
-                    rotator.config[key] = value;
-                });
+                kit.use(config);
             }
 
-            // Getting Rotator Items.
-            var items = $d(Config.data.Item, this).setData(Config.data.KitID, rt_id);
+            /* ENUMERATING COMPONENTS */
+            /* Rotator Items */
+            kit.items = $d($data.item, kit.holder).setData($data.id, kit_id);
 
-            // Getting Rotator Selector.
-            var select = $d(Config.data.Select, this).setData(Config.data.KitID, rt_id);
-
-            // Getting Rotator Navigator and Binding Click Function.
-            var prev = $d(Config.data.Prev, this).setData(Config.data.KitID, rt_id).click(function(e) {
-                e.stopPropagation();
-
-                rotator.navigate(Config.data.NavigatePrev);
-
-                return false;
-            });
-            var next = $d(Config.data.Next, this).setData(Config.data.KitID, rt_id).click(function(e) {
-                e.stopPropagation();
-
-                rotator.navigate(Config.data.NavigateNext);
-
-                return false;
-            });
-
-            // Adding navigator to Rotator Object.
-            rotator.set({
-                'nav_prev': prev,
-                'nav_next': next
-            });
-
-            // Creating Rotator Progress Controll if not exist.
-            var prog = $d(Config.data.Progress, this).setData(Config.data.KitID, rt_id);
-
-            var progressQuery = {};
-            progressQuery[Config.data.Progress] = '';
-            progressQuery[Config.data.KitID] = rt_id;
-
-            if (prog.length < 1) {
-                prog = $('<div>').setData(progressQuery).addClass(Config.data.Progress).css({ width: 0, position: 'absolute' }).prependTo(this);
+            /* Select Buttons If Enabled */
+            if (kit.config.select) {
+                kit.selects = $d($data.select, kit.holder).setData($data.id, kit_id);
             }
 
-            // Adding Progress to Rotator Object.
-            rotator.set('progress', prog);
+            /* Prev Button */
+            kit.prev = $d($data.prev, kit.holder).setData($data.id, kit_id);
 
-            // Adding Rotator Object to list.
-            Config.maps[rt_id] = rotator;
+            /* Next Button */
+            kit.next = $d($data.next, kit.holder).setData($data.id, kit_id);
 
-            // Increasing Counter.
-            Config.counter++;
+            /* Progress */
+            kit.progress = $d($data.progress, kit.holder).setData($data.id, kit_id);
+
+            /* Adding Kit to Collections */
+            $conf.maps[kit_id] = kit;
         });
 
-        // Reinitializing Rotator to prevent wrong items index number for rotator inside rotator.
-        foreach(Config.maps, function (rt_id, rotator) {
-            // Checking if already configured and determine does it should be reconfigured or not.
-            if (Config.allowReconfigure === false && rotator.holder.getData(Config.data.KitConfigured) === true) {
-                return;
+        /* Re-enumearting Kits to enable usage of rotator inside rotator. */
+        foreach($conf.maps, function (id, kit) {
+            /* FILTERING COMPONENTS TO PREVENT SELECT MISTAKES */
+            /* Items */
+            kit.items = kit.items.filter(':hasdata(' + $data.id + ', ' + id + ')');
+
+            /* Updating Total Items */
+            kit.total = kit.items.length;
+
+            /* Selects */
+            kit.selects = kit.selects.filter(':hasdata(' + $data.id + ', ' + id + ')');
+
+            /* Prev Button */
+            kit.prev = kit.prev.filter(':hasdata(' + $data.id + ', ' + id + ')');
+
+            /* Next Button */
+            kit.next = kit.next.filter(':hasdata(' + $data.id + ', ' + id + ')');
+
+            /* Progress Bar */
+            kit.progress = kit.progress.filter(':hasdata(' + $data.id + ', ' + id + ')');
+
+            /* Creating new progress bar when not exist and should auto-rotate */
+            if (kit.progress.length < 1 && isNumber(kit.config.auto)) {
+                kit.progress = $('<div class="progress" ' + $data.progress + '>')
+                    /* Adding Data Attribute */
+                    .setData($data.id, id)
+                    /* Prepend to content-rotator holder */
+                    .prependTo(kit.holder);
+
+                /* Adding style to hide progress if unused */
+                if (!kit.config.progress) {
+                    kit.progress.css({ position: 'absolute', top: 0, left: 0, visibility: 'hidden', opacity: 0 })
+                }
+            }
+
+            /* Finding Default Item */
+            var def = kit.items.filter(':hasdata(' + $data.default + ')');
+
+            if (def.length === 1) {
+                def = kit.items.index(def);
             } else {
-                rotator.holder.setData(Config.data.KitConfigured, true);
+                def = 0;
             }
 
-            // Temporary Default Item.
-            var default_item;
-            var default_select = 0;
+            /* Activating Default Item */
+            kit.navigate(def);
 
-            // Initializing Rotator Items.
-            var itemQuery = {};
-            itemQuery[Config.data.Item] = '?';
-            itemQuery[Config.data.KitID] = rt_id;
+            /* BINDING CLICK EVENTS */
+            /* Select Buttons */
+            kit.selects.click(function(e) {
+                e.stopPropagation();
 
-            var items = $d(itemQuery).each(function(index) {
-                // Applying Item Index ID.
-                $(this).setData(Config.data.ItemID, (index + 1));
+                var index = kit.selects.index(this);
 
-                // Setting first item as default activated item.
-                if (index === 0) {
-                    default_item = $(this);
-                    default_select = 0;
-                    rotator.current = 1;
-                    rotator.active = $(this);
-                }
+                if (isNumber(index)) kit.navigate(index);
 
-                // If this is default, then replace the first activated item with this.
-                if ($(this).getData(Config.data.Item) === 'default') {
-                    default_item = $(this);
-                    default_select = index;
-                    rotator.current = (index + 1);
-                    rotator.active = $(this);
-                }
+                return false;
             });
 
-            // Activating Default Item.
-            if (default_item) {
-                default_item.setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
-            }
+            /* Prev Button */
+            kit.prev.click(function(e) {
+                e.stopPropagation();
 
-            // Initializing Rotator Selectors.
-            var selectorQuery = {};
-            selectorQuery[Config.data.Select] = '?';
-            selectorQuery[Config.data.KitID] = rt_id;
+                kit.navigate($data.backward);
 
-            var selects = $d(selectorQuery).each(function(index) {
-                // Applying Item Index ID.
-                $(this).setData(Config.data.ItemID, (index + 1));
-
-                // Activating Default Select.
-                if (index === default_select) {
-                    $(this).setData(Config.data.ItemState, Config.data.ItemActive).addClass(Config.data.ItemActive);
-                }
-
-                // Biding Click Function.
-                $(this).click(function(e) {
-                    e.stopPropagation();
-
-                    var rt_id = $(this).getData(Config.data.KitID);
-                    var index = $(this).getData(Config.data.ItemID);
-
-                    if (isString(rt_id) && isNumber(index)) {
-                        rotator.navigate(index);
-                    }
-
-                    return false;
-                });
+                return false;
             });
 
-            // Adding Rotator Items and Selects to Rotator Object.
-            if (items.length > 0) {
-                rotator.set({ 'items': items, total: items.length });
-            }
-            if (selects.length > 0) {
-                rotator.set('selects', selects);
-            }
-        });
+            /* Next Button */
+            kit.next.click(function(e) {
+                e.stopPropagation();
 
-        // Initializing Auto Rotate.
-        foreach(Config.maps, function (name, rotator) {
-            if (isNumber(rotator.config.auto)) {
-                rotator.start();
+                kit.navigate($data.forward);
+
+                return false;
+            });
+
+            /* Cleaning up data attribute if shouldn't to be clean */
+            if ($conf.clean || !Automator.debug) {
+                kit.holder.remData([$data.kit, $data.id]);
+                kit.items.remData([$data.item, $data.id, $data.default]);
+                kit.selects.remData([$data.select, $data.id]);
+                kit.prev.remData([$data.prev, $data.id]);
+                kit.next.remData([$data.next, $data.id]);
+                kit.progress.remData([$data.progress, $data.id]);
+            }
+
+            /* Starting auto-rotate if enabled */
+            if (isNumber(kit.config.auto)) {
+                kit.start();
             }
         });
 
         return this;
     };
 
-    // Automator Prototypes.
+    /* Automator Prototypes */
     contentRotator.prototype = {
-        addAnimation: function(animationName, func) {
-            if (isString(animationName) && isFunction(func)) {
-                Config.animator[animationName] = func;
-            } else if (isObject(animationName)) {
-                foreach(animationName, function (name, func) {
-                    if (isFunction(func)) {
-                        Config.animator[name] = func;
-                    }
-                });
-            }
+        addAnimation: function(name, handler) {
+            var $this = this;
 
-            return this;
-        }
-    };
-
-    // Registering Automator including autobuild and default escape condition.
-    Automator(AutomatorName, contentRotator).autobuild(true).escape(function () {
-        if (Automator(AutomatorName).enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-})(jQuery, jQuery.findData);
-
-(function($, $d) {
-    'use strict';
-
-    var Config = {
-        counter: 0,
-        IDPrefix: 'dropdown-',
-
-        allowReconfigure: false,
-
-        animator: {
-            /**
-             * Default Dropdown showing effect.
-             * @param data
-             */
-            default: function(data) {
-                if (data.state === 'down') {
-                    data.parent.remData('toggle-state').removeClass('down');
-                    data.button.remData('toggle-state').removeClass('down');
-                    data.list.remData('toggle-state').removeClass('down');
-                } else if (data.state === 'up') {
-                    Automator('toggle-state-destroy').build(false);
-
-                    data.parent.setData('toggle-state', 'down').addClass('down');
-                    data.button.setData('toggle-state', 'down').addClass('down');
-                    data.list.setData('toggle-state', 'down').addClass('down');
-                }
-            }
-        },
-        handler: {
-            default: function (data) {
-                data.active.setData('dropdown-item', 'ready').removeClass('current');
-                data.target.setData('dropdown-item', 'current').addClass('current');
-
-                data.label.html(data.target.html());
-            }
-        }
-    };
-
-    var DropDown = function(object) {
-        !isJQuery(object) ? object = $d('dropdown-kit') : object;
-
-        object.each(function() {
-            if (Config.allowReconfigure === false && $(this).getData('dropdown-configured') === true) {
-                return;
-            } else {
-                $(this).setData('dropdown-configured', true);
-            }
-
-            var index = (Config.counter + 1);
-            var dd_id = (Config.IDPrefix + index);
-
-            var dd_tp = $(this).setData('dropdown-id', dd_id).getData('dropdown-kit');
-
-            var button = $d('dropdown-button', this).setData('dropdown-id', dd_id);
-            var list = $d('dropdown-list', this).setData('dropdown-id', dd_id);
-
-            if (dd_tp === 'select') {
-                var label = $d('dropdown-label', this).setData('dropdown-id', dd_id);
-                var first;
-
-                var items = $d('dropdown-item', this).setData('dropdown-id', dd_id).each(function(idx) {
-                    var isCur = $(this).getData('dropdown-item');
-
-                    if (idx === 0) {
-                        label.html($(this).html());
-                        $(this).setData('dropdown-item', 'current').addClass('current');
-
-                        first = this;
-                    }
-
-                    if (isCur === 'current') {
-                        label.html($(this).html());
-                        $(this).addClass('current');
-
-                        $(first).setData('dropdown-item', 'ready').removeClass('current');
-                    }
-
-                    $(this).click(function(e) {
-                        e.stopPropagation();
-
-                        /* Toggling the dropdown */
-                        Automator('toggle-state-destroy').build(false);
-
-                        /* Skip if already active */
-                        if ($(this).getData('dropdown-item') === 'current') return false;
-
-                        var dd_id = $(this).getData('dropdown-id');
-
-                        var target = $(this);
-                        var parent = $d({ 'dropdown-kit': '?', 'dropdown-id': dd_id });
-
-                        var onselect = parent.getData('dropdown-onselect');
-
-                        var active = $d({ 'dropdown-item': 'current', 'dropdown-id': dd_id }, parent);
-
-                        var label = $d({ 'dropdown-label': '?', 'dropdown-id': dd_id }, parent);
-                        var button = $d({ 'dropdown-button': '?', 'dropdown-id': dd_id }, parent);
-                        var list = $d({ 'dropdown-list': '?', 'dropdown-id': dd_id }, parent);
-
-                        Config.handler.default({
-                            target: target,
-                            active: active,
-                            label: label,
-
-                            button: button,
-                            parent: parent,
-                            list: list
-                        });
-
-                        if (isString(onselect) && Config.handler.hasOwnProperty(onselect)) {
-                            Config.handler[onselect]({
-                                target: target,
-                                active: active,
-                                label: label,
-
-                                button: button,
-                                parent: parent,
-                                list: list
-                            });
-                        }
-
-                        return false;
-                    });
-                });
-            }
-
-            Config.counter++;
-
-            button.click(function(e) {
-                e.stopPropagation();
-
-                var dd_id = $(this).getData('dropdown-id');
-                var state = $(this).getData('toggle-state');
-                var effect = $(this).getData('dropdown-effect');
-
-                if (!state) {
-                    state = 'up';
-                }
-
-                var parent = $d({ 'dropdown-kit': '?', 'dropdown-id': dd_id });
-                var button = $d({ 'dropdown-button': '?', 'dropdown-id': dd_id }, parent);
-                var list = $d({ 'dropdown-list': '?', 'dropdown-id': dd_id }, parent);
-
-                if (!isString(effect) || !Config.animator.hasOwnProperty(effect)) {
-                    effect = 'default';
-                }
-
-                Config.animator[effect]({
-                    state: state,
-                    parent: parent,
-                    button: button,
-                    list: list
-                });
-
-                return false;
-            });
-        });
-
-        return this;
-    };
-
-    DropDown.prototype = {
-        setup: function(object) {
-            if (isObject(object)) {
-                foreach(object, function (key, value) {
-                    Config[key] = value;
+            if (isString(name) && isFunction(handler)) {
+                $this._config.effect[name] = handler;
+            } else if (isObject(name)) {
+                foreach(name, function (name, handler) {
+                    $this._config.effect[name] = handler;
                 });
             }
 
             return this;
         },
-        addEffect: function(name, func) {
-            if (isString(name) && isFunction(func)) {
-                Config.animator[name] = func;
-            }
+        addCallback: function(name, handler) {
+            var $this = this;
 
-            return this;
-        },
-        addHandler: function(name, func) {
-            if (isString(name) && isFunction(func)) {
-                Config.handler[name] = func;
+            if (isString(name) && isFunction(handler)) {
+                $this._config.callback[name] = handler;
+            } else if (isObject(name)) {
+                foreach(name, function (name, handler) {
+                    $this._config.callback[name] = handler;
+                });
             }
 
             return this;
         }
     }
 
-    Automator('dropdown-kit', DropDown).autobuild(true).escape(function() {
-        if (Automator('dropdown-kit').enabled === false) {
-            return true;
-        } else {
-            return false
+    // Registering Automator.
+    Automator(AutomatorName, contentRotator).setup(defConf).config(defData);
+})(jQuery, jQuery.findData);
+
+/**
+ * BabonJS.
+ * ContentTab Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 11/13/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name.
+    var AutomatorName = 'tab';
+
+    var defConf = {
+        effect: {}
+    };
+
+    var defData = {
+        content: 'tab-content',
+        buttons: 'tab-button',
+        current: 'current',
+
+        state: 'tab-state'
+    };
+
+    // ContentTab object.
+    var ContentTab = function () {
+        this.config = {
+            effect: 'default'
+        };
+
+        this.id = '';
+        this.holder = $('<div>');
+        this.current = {
+            button: $('<div>'),
+            content: $('<div>')
+        };
+        this.target = {
+            button: $('<div>'),
+            content: $('<div>')
+        };
+
+        return this;
+    };
+
+    // ContentTab Object Prototypes.
+    ContentTab.prototype = {
+        // Change or add Kit properties.
+        set: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this[name] = value;
+                });
+            }
+
+            return this;
+        },
+        use: function(name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this[name] = value;
+                });
+            }
+
+            return this;
+        },
+        switch: function(index) {
+            var $this = this;
+
+            /* Getting Target */
+            $this.target.button = $($this.buttons.get(index));
+            $this.target.content = $($this.content.get(index));
+
+            if ($this.$conf.effect.hasOwnProperty($this.config.effect)) {
+                $this.$conf.effect[$this.config.effect].apply($this);
+            } else {
+                /* Deactivating Current */
+                $this.current.button.removeClass($this.$data.current);
+                $this.current.content.removeClass($this.$data.current);
+
+                /* Activating Target */
+                $this.target.button.addClass($this.$data.current);
+                $this.target.content.addClass($this.$data.current);
+
+                /* Clean Attributes */
+                if (!$this.$conf.clean && Automator.debug) {
+                    $this.current.button.remData($this.$data.state);
+                    $this.current.content.remData($this.$data.state);
+
+                    $this.target.button.setData($this.$data.state, $this.$data.current);
+                    $this.target.content.setData($this.$data.state, $this.$data.current);
+                }
+            }
+
+            /* Replacing Current Tab */
+            $this.current.button = $this.target.button;
+            $this.current.content = $this.target.content;
+
+            return this;
         }
-    });
+    };
+
+    // Automator Constructor.
+    var contentTab = function (object) {
+        var $this = this;
+        var $conf = this._config;
+        var $data = this._config.data;
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + $data.Kit + ')');
+
+        // Iterating Objects.
+        object.each(function () {
+            /* Getting Kit ID or create new if not defined */
+            var kit_id = $(this).getData($data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
+
+                /* Increasing Counter */
+                $conf.counter++;
+            }
+
+            /* Creating new Kit */
+            var Kit = new ContentTab().set({
+                id: kit_id,
+
+                holder: $(this).setData($data.KitID, kit_id),
+
+                $conf: $conf,
+                $data: $data
+            });
+
+            /* Getting Configs */
+            var config = Kit.holder.getData($data.Kit);
+
+            if (isObject(config)) {
+                Kit.use(config);
+            }
+
+            /* Finding Content and Buttons */
+            $d($data.content, Kit.holder).setData($data.KitID, kit_id);
+            $d($data.buttons, Kit.holder).setData($data.KitID, kit_id);
+
+            /* Adding To Collections */
+            $conf.maps[kit_id] = Kit;
+        });
+
+        /* Re Enumerate Buttons and Contents to prevent conflict with tab-in-tab */
+        foreach($conf.maps, function (id, kit) {
+            /* Finding Buttons */
+            var buttonQuery = {};
+            buttonQuery[$data.buttons] = '?';
+            buttonQuery[$data.KitID] = id;
+
+            kit.buttons = $d(buttonQuery, kit.holder).click(function(e) {
+                e.stopPropagation();
+
+                var index = kit.buttons.index(this);
+
+                kit.switch(index);
+
+                return false;
+            });
+
+            /* Finding Contents */
+            var contentQuery = {};
+            contentQuery[$data.content] = '?';
+            contentQuery[$data.KitID] = id;
+
+            kit.content = $d(contentQuery, kit.holder);
+
+            /* Finding Default Tab */
+            var def = kit.content.filter(':hasattr(default)');
+
+            if (def.length === 1) {
+                def = kit.content.index(def);
+            } else {
+                def = 0;
+            }
+
+            kit.switch(def);
+
+            /* Cleaning up attributes */
+            if ($conf.clean || !Automator.debug) {
+                kit.holder.remData([$data.Kit, $data.KitID]);
+
+                kit.buttons.remData([$data.button, $data.KitID]);
+                kit.content.remData([$data.content, $data.KitID]).removeAttr('default');
+            }
+        });
+
+        return this;
+    };
+
+    contentTab.prototype = {
+        addEffect: function(name, handler) {
+            var $this = this;
+
+            if (isString(name) && isFunction(handler)) {
+                $this._config.effect[name] = handler;
+            } else if (isObject(name)) {
+                foreach(name, function (name, handler) {
+                    $this._config.effect[name] = handler;
+                });
+            }
+
+            return this;
+        }
+    };
+
+    // Registering Automator.
+    Automator(AutomatorName, contentTab).setup(defConf).config(defData);
+})(jQuery, jQuery.findData);
+
+(function($, $d) {
+    'use strict';
+
+    /* Defining Automator Name */
+    var AutomatorName = 'dropdown';
+
+    var defData = {
+        list        : 'dropdown-list',
+        item        : 'dropdown-item',
+        label       : 'dropdown-label',
+        value       : 'value',
+        button      : 'dropdown-button',
+
+        state       : 'dropdown-state',
+        current     : 'current',
+        exclass     : 'expanded',
+        coclass     : 'collapsed'
+    };
+
+    var defConf = {
+        alive: false,
+        effect: {
+            expand: {
+                'default': function() {
+                    var $this = this, $data = $this.$data;
+
+                    $this.holder
+                        .setData($data.state, $data.exclass)
+                        .addClass($data.exclass);
+
+                    $this.button
+                        .setData($data.state, $data.exclass)
+                        .addClass($data.exclass);
+
+                    $this.lists
+                        .setData($data.state, $data.exclass)
+                        .addClass($data.exclass);
+
+                    return this;
+                },
+                'simple': function() {
+                    var $this = this, $data = $this.$data;
+
+                    $this.holder
+                        .setData($data.state, $data.exclass)
+                        .addClass($data.exclass);
+
+                    $this.button
+                        .setData($data.state, $data.exclass)
+                        .addClass($data.exclass);
+
+                    $this.lists
+                        .setData($data.state, $data.exclass)
+                        .slideDown()
+                        .addClass($data.exclass);
+
+                    return this;
+                }
+            },
+            collapse: {
+                'default': function() {
+                    var $this = this, $data = $this.$data;
+
+                    $this.holder
+                        .remData($data.state, $data.exclass)
+                        .removeClass($data.exclass);
+
+                    $this.button
+                        .remData($data.state, $data.exclass)
+                        .removeClass($data.exclass);
+
+                    $this.lists
+                        .remData($data.state, $data.exclass)
+                        .removeClass($data.exclass);
+
+                    return this;
+                },
+                'simple': function() {
+                    var $this = this, $data = $this.$data;
+
+                    $this.holder
+                        .remData($data.state, $data.exclass)
+                        .removeClass($data.exclass);
+
+                    $this.button
+                        .remData($data.state, $data.exclass)
+                        .removeClass($data.exclass);
+
+                    $this.lists
+                        .remData($data.state, $data.exclass)
+                        .slideUp()
+                        .removeClass($data.exclass);
+
+                    return this;
+                }
+            }
+        },
+        select: {}
+    };
+
+    /* Dropdown Object */
+    var Dropdown = function() {
+        this.config = {
+            effect: 'default',
+            select: 'none',
+            type: 'anchor'
+        };
+
+        this.holder = $('<div>');
+        this.button = $('<span>');
+
+        this.label = $('<span>');
+        this.lists = $('<div>');
+        this.items = $('<ul>');
+
+        this.select = $('<select>');
+        this.active = null;
+        this.target = null;
+
+        this.state = 'init';
+
+        return this;
+    };
+
+    /* Dropdown Prototype */
+    Dropdown.prototype = {
+        set: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                $this[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this[name] = value;
+                });
+            }
+
+            return this;
+        },
+        use: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                $this.config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this.config[name] = value;
+                });
+            }
+
+            return this;
+        },
+        expand: function() {
+            var $this = this, $conf = $this.$conf, $data = $this.$data;
+
+            $this.state = 'expanded';
+
+            if ($conf.effect.expand.hasOwnProperty($this.config.effect)) {
+                $conf.effect.expand[$this.config.effect].apply(this);
+            } else {
+                $conf.effect.expand['default'].apply(this);
+            }
+
+            return this;
+        },
+        collapse: function(ts) {
+            var $this = this, $conf = $this.$conf, $data = $this.$data;
+
+            $this.state = 'collapsed';
+
+            if ($conf.effect.collapse.hasOwnProperty($this.config.effect)) {
+                $conf.effect.collapse[$this.config.effect].apply(this);
+            } else {
+                $conf.effect.collapse['default'].apply(this);
+            }
+
+            return this;
+        },
+        toggle: function() {
+            var $this = this, $conf = $this.$conf, $data = $this.$data;
+
+            if ($this.state === 'expanded') {
+                $this.collapse();
+            } else {
+                if (!$this.$conf.alive) {
+                    Automator('toggle-collapse').collapse('private');
+                }
+                $this.expand();
+            }
+
+            return this;
+        },
+        choose: function(index) {
+            var $this = this, $conf = $this.$conf, $data = $this.$data;
+
+            if (index !== $this.active) {
+                /* Removing Selected Item */
+                $this.items
+                    .removeAttr($data.current)
+                    .removeClass($data.current);
+
+                /* Getting Target Option */
+                var option = $('option:nth-child(' + (index + 1) + ')', $this.select);
+                /* Activating Target Option */
+                option.prop('selected', true);
+
+                /* Getting Target Item */
+                var item = $($this.items.get(index));
+                /* Activating Target Item */
+                item
+                    .attr($data.current, '')
+                    .addClass($data.current);
+
+                /* Replacing Label Text */
+                $this.label.html(item.html());
+
+                /* Registering Active Index */
+                $this.active = index;
+                $this.target = item;
+
+                /* Triggering Select Handler */
+                if ($this.state !== 'init') {
+                    if ($conf.select.hasOwnProperty($this.config.select) && $this.state !== 'init') {
+                        $conf.select[$this.config.select].apply(this);
+                    }
+                }
+            }
+
+            /* Collapsing Dropdown */
+            $this.collapse();
+
+            return this;
+        }
+    };
+
+    var dropdown = function(object) {
+        var $this = this;
+        var $conf = this._config;
+        var $data = this._config.data;
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + $data.Kit + ')');
+
+        /* Enumerating Objects */
+        object.each(function () {
+            // Getting Kit ID or create new if not defined.
+            var kit_id = $(this).getData($data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
+
+                /* Increasing Counter */
+                $conf.counter++;
+            }
+
+            // Creating New Kit.
+            var Kit = new Dropdown().set({
+                $data: $data,
+                $conf: $conf,
+                id: kit_id,
+                holder: $(this).setData($data.KitID, kit_id)
+            });
+
+            /* Getting Configuration */
+            var config = $(this).getData($data.Kit);
+
+            if (isObject(config)) {
+                Kit.use(config);
+
+                if (!config.hasOwnProperty('name')) {
+                    Kit.use('name', kit_id);
+                }
+            } else {
+                Kit.use('name', kit_id);
+            }
+
+            /* Enumerating Component to assign ID */
+            /* Button */
+            Kit.button = $d($data.button, Kit.holder).setData($data.KitID, kit_id);
+
+            /* Binding Button Click Event */
+            Kit.button.click(function(e) {
+                e.stopPropagation();
+
+                Kit.toggle();
+
+                return false;
+            });
+
+            /* Label */
+            Kit.label = $d($data.label, Kit.holder).setData($data.KitID, kit_id);
+            /* Same as button if no label defined */
+            if (Kit.label.length < 1) {
+                Kit.label = Kit.button;
+            }
+
+            /* List */
+            Kit.lists = $d($data.list, Kit.holder).setData($data.KitID, kit_id);
+
+            /* Items */
+            Kit.items = $d($data.item, Kit.holder).setData($data.KitID, kit_id);
+
+            /* Configuring Dropdown type seconfigt */
+            if (Kit.config.type === 'select') {
+                /* Creating New Select Object */
+                var select = $('<select hidden>')
+                    .attr('name', Kit.config.name)
+                    .attr('id', Kit.config.name);
+
+                Kit.select = select.appendTo(Kit.holder);
+
+                /* Creating Options */
+                foreach(Kit.items, function (obj, i) {
+                    var item = $(obj);
+
+                    var option = $('<option>')
+                        .appendTo(select)
+                        .html(item.html());
+
+                    // Getting Value.
+                    var value = item.attr($data.value);
+
+                    if (isString(value)) {
+                        option.attr('value', value);
+                        Kit.active = i;
+                    } else {
+                        option.attr('value', item.html());
+                        Kit.active = i;
+                    }
+
+                    /* Binding Select Event */
+                    item.click(function(e) {
+                        e.stopPropagation();
+
+                        Kit.choose(i);
+
+                        return false;
+                    });
+                });
+
+                Kit.select.change(function() {
+                    var active = $('option:selected', this);
+                    var index = $('option', this).index(active);
+
+                    Kit.choose(index);
+                });
+            }
+
+            /* Getting Default Item */
+            var def = Kit.items.filter(':hasattr(default)');
+
+            if (def.length === 1) {
+                def = Kit.items.index(def);
+            } else {
+                def = 0;
+            }
+
+            /* Activating Default Item */
+            Kit.choose(def);
+
+            /* Adding Kit to Collections */
+            $conf.maps[kit_id] = Kit;
+
+            /* Registering Collapse */
+            Automator('toggle-collapse').register(Kit);
+
+            /* Cleaning Up Data Attributes */
+            if ($conf.clean || !Automator.debug) {
+                Kit.holder.remData([$data.KitID, $data.Kit]);
+                Kit.button.remData([$data.KitID, $data.button]);
+                Kit.label.remData([$data.KitID, $data.label]);
+                Kit.items.remData([$data.KitID, $data.item]);
+                Kit.lists.remData([$data.KitID, $data.list]);
+            }
+        });
+    };
+
+    dropdown.prototype = {
+        addExpandEffect: function(name, func) {
+            var $this = this;
+
+            if (isString(name) && isFunction(func)) {
+                $this._config.effect.expand[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    $this._config.effect.expand[name] = func;
+                });
+            }
+
+            return this;
+        },
+        addCollapseEffect: function(name, func) {
+            var $this = this;
+
+            if (isString(name) && isFunction(func)) {
+                $this._config.effect.collapse[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    $this._config.effect.collapse[name] = func;
+                });
+            }
+
+            return this;
+        },
+        addSelectHanlder: function(name, func) {
+            var $this = this;
+
+            if (isString(name) && isFunction(func)) {
+                $this._config.select[name] = func;
+            } else if (isObject(name)) {
+                foreach(name, function (name, func) {
+                    $this._config.select[name] = func;
+                });
+            }
+
+            return this;
+        },
+    }
+
+    /* Registering Automator */
+    Automator(AutomatorName, dropdown).setup(defConf).config(defData);
 })(jQuery, jQuery.findData);
 
 (function($, $d) {
@@ -3811,13 +4404,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             return this;
         }
     };
-    Automator('google-map', GoogleMap.Basic).autobuild(true).escape(function() {
-        if (Automator('google-map').enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
+    Automator('google-map', GoogleMap.Basic);
 
     /**
      * Build Embeded Google Map.
@@ -4042,6 +4629,200 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
 
  })(jQuery, jQuery.findData);
+
+/**
+ * BabonJS.
+ * Grid Automator Scripts.
+ * Language: Javascript.
+ * Created by mahdaen on 11/18/14.
+ * License: GNU General Public License v2 or later.
+ */
+
+(function ($, $d) {
+    'use strict';
+
+    // Automator Name.
+    var AutomatorName = 'grid';
+
+    var defData = {
+        column: 'grid-col',
+        wrapper: 'grid-wrap'
+    };
+
+    // Grid object.
+    var Grid = function () {
+        this.config = {
+            width: false,
+
+            column: 12,
+            gutter: 10,
+
+            gutterpos: 'left',
+
+            pull: true,
+            wrap: true,
+            format: '%'
+        };
+
+        this.holder = $('<div>');
+
+        this.wrapper = $('<div>');
+        this.columns = $('<div>');
+
+        this.width = 0;
+        this.colWidth = 0;
+        this.gutWidth = 0;
+
+        return this;
+    };
+
+    // Grid Object Prototypes.
+    Grid.prototype = {
+        // Change or add Kit properties.
+        set: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                this[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this[name] = value;
+                });
+            }
+
+            return this;
+        },
+        use: function (name, value) {
+            var $this = this;
+
+            if (isString(name) && isDefined(value)) {
+                this.config[name] = value;
+            } else if (isObject(name)) {
+                foreach(name, function (name, value) {
+                    $this.config[name] = value;
+                });
+            }
+
+            return this;
+        },
+    };
+
+    // Automator Constructor.
+    var grid = function (object) {
+        var $this = this;
+        var $conf = this._config;
+        var $data = this._config.data;
+
+        // Querying all kit if not defined.
+        !isJQuery(object) && !isString(object) ? object = $d($data.Kit) : object;
+
+        // Checking if object is context.
+        isString(object) ? object = $d($data.Kit, object) : object;
+
+        // Filtering object to makes only kit left.
+        object = object.filter(':hasdata(' + $data.Kit + ')');
+
+        // Iterating Objects.
+        object.each(function () {
+            /* Creating Kit ID */
+            var kit_id = $(this).getData($data.KitID);
+            if (!isString(kit_id)) {
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
+
+                $conf.counter++;
+            }
+
+            /* Creating New Kit */
+            var kit = new Grid().set({
+                $conf: $conf,
+                $data: $data,
+
+                id: kit_id,
+                holder: $(this).setData($data.KitID, kit_id)
+            });
+
+            /* Getting Config */
+            var config = $(this).getData($data.Kit);
+            if (isObject(config)) {
+                kit.use(config);
+            }
+
+            /* Getting Wrapper */
+            kit.wrapper = $d($data.wrapper, kit.holder).setData($data.KitID, kit_id);
+            kit.columns = $d($data.column, kit.holder).setData($data.KitID, kit_id);
+
+            /* Counting Dimensions */
+            if (!kit.config.width) {
+                kit.config.width = kit.holder.width();
+            }
+
+            var gut_size = ((kit.config.gutter / kit.config.width) * 100);
+            var col_size = ((100 / kit.config.column) - gut_size);
+            var own_size = (100 + gut_size);
+
+            /* Exporting Dimensions */
+            if (kit.config.format === 'px') {
+                kit.width = Math.round((own_size / 100) * kit.config.width);
+                kit.colWidth = Math.round((col_size / 100) * kit.config.width);
+                kit.gutWidth = Math.round((gut_size / 100) * kit.config.width);
+            } else if (kit.config.format === '%') {
+                kit.width = Math.round(own_size);
+                kit.colWidth = Math.round(col_size);
+                kit.gutWidth = Math.round(gut_size);
+            }
+
+            /* Adding to map */
+            $conf.maps[kit_id] = kit;
+        });
+
+        /* Re Enumerating Kit */
+        foreach($conf.maps, function (id, kit) {
+            /* Filtering wrapper and items to ensure the ID is correct */
+            kit.wrapper = kit.wrapper.filter(':hasdata(' + $data.KitID + ', ' + id  + ')')
+
+            /* Set the wrapper width and margin to pull */
+            if (kit.config.wrap) {
+                kit.wrapper.css({
+                    width: (kit.width + kit.config.format)
+                });
+            }
+            if (kit.config.pull && kit.gutWidth > 0) {
+                kit.wrapper.css('margin-' + kit.config.gutterpos, ('-' + kit.gutWidth + kit.config.format));
+            }
+
+            /* Get corrected column and set the column width and margin as gutter */
+            kit.columns = kit.columns.filter(':hasdata(' + $data.KitID + ', ' + id  + ')').each(function() {
+                var col = $(this).getData($data.column);
+
+                if (isNumber(col)) {
+                    var width = ((kit.colWidth * col) + (kit.gutWidth * (col - 1)));
+
+                    $(this).css('width', (width + kit.config.format));
+
+                    if (kit.gutWidth > 0) {
+                        $(this).css('margin-' + kit.config.gutterpos, (kit.gutWidth + kit.config.format))
+                    }
+                }
+
+                if ($(this).hasData('box-ratio')) {
+                    $(this).css('height', '').maintainRatio();
+                }
+            });
+
+            /* Cleaning Up Data Attribute */
+            if ($conf.clean || !Automator.debug) {
+                kit.holder.remData([$data.Kit, $data.KitID]);
+                kit.wrapper.remData([$data.wrapper, $data.KitID]);
+                kit.columns.remData([$data.column, $data.KitID]);
+            }
+        });
+
+        return this;
+    };
+
+    // Registering Automator.
+    Automator(AutomatorName, grid).config(defData);
+})(jQuery, jQuery.findData);
 
 /**
  * Image Automator.
@@ -4773,6 +5554,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     };
     var DefConf = {
         loadtime: 'onload',
+        cache: false,
         before: {},
         after: {},
         open: {},
@@ -4856,7 +5638,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         load: function(target) {
             var $this = this;
 
-
             if (isJQuery(target)) {
                 target = target.getData($this._config.data.Command);
 
@@ -4868,6 +5649,9 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 $this.target = target;
 
                 if (target.hasOwnProperty('source')) {
+                    /* Hide Current Window before load */
+                    $this.hide();
+
                     /* Triggering Before Load */
                     if (target.hasOwnProperty('before') && $this._config.before.hasOwnProperty(target.before)) {
                         $this._config.before[target.before].apply(this);
@@ -4877,6 +5661,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     $.ajax({
                         url: target.source,
                         dataType: 'text/html',
+                        cache: $this._config.cache,
 
                         complete: function(data) {
                             /* Triggering After Load */
@@ -4884,6 +5669,12 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                                 $this._config.after[target.after].apply(this);
                             }
 
+                            /* Opening Lightbox */
+                            $this.target.data = data;
+                            $this.open();
+                        },
+                        error: function(data) {
+                            $this.container.html('Unable to procceed request!')
                             /* Opening Lightbox */
                             $this.target.data = data;
                             $this.open();
@@ -4900,7 +5691,20 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
             return this;
         },
-        exit: function() {
+        hide: function () {
+            var $this = this;
+            var target = $this.target;
+
+            /* Exit Effect Handler */
+            if (target.hasOwnProperty('effect') && $this._config.effect.exit.hasOwnProperty(target.effect)) {
+                $this._config.effect.exit[target.effect].apply(this);
+            } else {
+                $this.holder.removeClass('open');
+            }
+
+            return this;
+        },
+        exit: function(nowait) {
             var $this = this;
             var target = $this.target;
 
@@ -4910,10 +5714,15 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             } else {
                 $this.holder.removeClass('open');
 
-                $this.cleaner = setTimeout(function() {
+                if (!nowait) {
+                    $this.cleaner = setTimeout(function() {
+                        $this.container.attr('class', $this.defclass);
+                        $this.container.empty();
+                    }, 1000);
+                } else {
                     $this.container.attr('class', $this.defclass);
                     $this.container.empty();
-                }, 1000);
+                }
             }
 
             /* Exit Event Handler */
@@ -5016,8 +5825,29 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
             at.destroyer.push($(this).setData(at._config.data.KitID, id));
 
-        }).click(function () {
+        }).click(function (e) {
+            e.stopPropagation();
+
             Automator(AutomatorName).exit();
+
+            return false;
+        });
+    }, false);
+
+    Automator(DataCfg.Command, function() {
+        var at = Automator(AutomatorName);
+
+        $d(at._config.data.Command).each(function() {
+            var id = at.ID;
+
+            at.commander.push($(this).setData(at._config.data.KitID, id));
+
+        }).click(function (e) {
+            e.stopPropagation();
+
+            Automator(AutomatorName).load($(this));
+
+            return false;
         });
     }, false);
 })(jQuery, jQuery.findData);
@@ -5523,241 +6353,57 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     Automator(AutomatorName, scrollDocker);
 })(jQuery, jQuery.findData);
 
-/**
- * Tab Kit Automator.
- */
 (function($, $d) {
     'use strict';
 
-    var Config = {
-        counter: 0,
-        IDPrefix: 'tab-',
-
-        allowReconfigure: false,
-
-        handler: [],
-        animator: {
-            default: function(data) {
-                /* Deactivate current tab */
-                data.active.remData('tab-state').removeClass('current');
-
-                /* Activating this tab */
-                data.target.setData('tab-state', 'current').addClass('current');
-
-                if (data.handle.length > 0) {
-                    foreach(data.handle, function (handler) {
-                        handler({
-                            active: data.active,
-                            target: data.target
-                        });
-                    });
-                }
-
-                return this;
-            }
-        }
-    };
-
-    Registry('tab-kit:config', Config, {lock: true, key: 'TAB-001'});
+    var AutomatorName = 'toggle-collapse';
 
     /**
-     * Tab Automator Kit.
-     * @param object - jQuery object that hold the tab kit.
-     * @return {TabKit}
-     * @constructor
+     * Help automator that has `collapse` function to collapse them when clicking on free areas.
+     * @return {Automator}
      */
-    var TabKit = function(object) {
-        !isJQuery(object) ? object = $d('tab-kit') : object;
+    var DownStateDestroyer = function() {
+        var $this = this;
+        var $conf = this._config;
+        var $data = $conf.data;
 
-        /* Enumerating Object to assign ID. Prevent issues when we have Tab inside Tab */
-        object.each(function() {
-            /* Skip if reconfigure is not allowed and tab already configured */
-            if (Config.allowReconfigure === false && $(this).getData('tab-configured') === true) return;
-
-            var index = (Config.counter + 1);
-            var ta_id = (Config.IDPrefix + index);
-
-            $(this).setData('tab-kit', ta_id);
-
-            /* Embedding Tab ID */
-            $d('tab-button', this).setData('tab-id', ta_id);
-            $d('tab-content', this).setData('tab-id', ta_id);
-
-            Config.counter++;
-        });
-
-        /* Enumerating Indexes and assigning events. */
-        foreach(Config.counter, function (index) {
-            var tab_id = (Config.IDPrefix + (index + 1));
-            var tab_ct = $d({ 'tab-kit': tab_id });
-            var tab_cs = tab_ct.getData('tab-configured');
-
-            /* Skip if reconfigure is not allowed and tab already configured */
-            if (Config.allowReconfigure === false && tab_cs === true) {
-                return;
-            } else if (Config.allowReconfigure === true && tab_cs === true) {
-                tab_ct.setData('tab-configured', 'reconfigured');
-            } else {
-                tab_ct.setData('tab-configured', true);
-            }
-
-            var tab_ef = tab_ct.getData('tab-effect');
-
-            if (!isString(tab_ef) || !Config.animator.hasOwnProperty(tab_ef)) {
-                tab_ef = 'default';
-            }
-
-            /* Enumerating Buttons */
-            var buttons = $d({ 'tab-button': '?', 'tab-id': tab_id }).setData('tab-effect', tab_ef);
-
-            /* Enumerating Buttons */
-            var content = $d({ 'tab-content': '?', 'tab-id': tab_id });
-
-            /* Configuring buttons */
-            buttons.each(function(idx) {
-                var idx = (idx + 1);
-                var stt = $(this).getData('action-state');
-
-                $(this).setData('tab-index', idx);
-
-                if (idx === 1) {
-                    $(this).setData('tab-state', 'current').addClass('current');
-                }
-
-                if (!stt) {
-                    $(this).setData('action-state', 'initialised');
-
-                    /* Binding Action */
-                    $(this).click(function() {
-                        if ($(this).getData('tab-state') === 'current') return false;
-
-                        var tab_id = $(this).getData('tab-id');
-                        var tab_ix = $(this).getData('tab-index');
-                        var tab_ef = $(this).getData('tab-effect');
-
-                        var active = $(':hasdata(tab-id, ' + tab_id + '):hasdata(tab-state, current)');
-                        var target = $(':hasdata(tab-id, ' + tab_id + '):hasdata(tab-index, ' + tab_ix + ')');
-
-                        Config.animator[tab_ef]({
-                            active: active,
-                            target: target,
-                            handle: Config.handler
-                        });
-
-                        return false;
-                    });
-                }
-            });
-
-            /* Configuring contents */
-            content.each(function(idx) {
-                var idx = (idx + 1);
-
-                $(this).setData('tab-index', idx);
-
-                if (idx === 1) {
-                    $(this).setData('tab-state', 'current').addClass('current');
-                }
+        var obj = $d($data.Kit).each(function() {
+            $(this).click(function() {
+                $this.collapse();
             });
         });
+
+        if ($conf.clean || !Automator.debug) {
+            obj.remData($data.Kit);
+        }
 
         return this;
     };
 
-    /* TabKit Prototype */
-    TabKit.prototype = {
-        /**
-         * Add Callback to TabKit.
-         * @param func - Javascript function that handle tab changes. We give argument {active, target}.
-         * @return {TabKit}
-         */
-        addCallback: function(func) {
-            if (isFunction(func)) {
-                Config.handler.push(func);
+    DownStateDestroyer.prototype = {
+        register: function(toggler) {
+            var $this = this;
+
+            if (isObject(toggler)) {
+                $this._config.toggler.push(toggler);
             }
 
             return this;
         },
+        collapse: function() {
+            var $this = this;
 
-        /**
-         * Add Custom Effect Handler to TabKit.
-         * @param name - String the effect name. e.g: fade
-         * @param func - Function that handle the effect. We give argument {active, target, handle}. You've to Execute all callback in 'handle' object after finishing effect.
-         * @return {TabKit}
-         */
-        addEffect: function(name, func) {
-            if (isString(name) && isFunction(func)) {
-                Config.animator[name] = func;
-            }
-
-            return this;
-        },
-
-        /**
-         * Configuring TabKit.
-         * @param object - Object contains config key and value. Avaliable key: IDPrefix [default: "tab-"], allowReconfigure [default: false]
-         * @return {TabKit}
-         */
-        setup: function(object) {
-            if (isObject(object)) {
-                foreach(object, function (key, value) {
-                    Config[key] = value;
-                });
-            }
+            foreach($this._config.toggler, function (toggler) {
+                if (toggler.collapse) {
+                    toggler.collapse(arguments);
+                }
+            });
 
             return this;
         }
     }
 
-    /* Registering TabKit into Automator */
-    Automator('tab-kit', TabKit).autobuild(true).escape(function() {
-        if (Automator('tab-kit').enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-})(jQuery, jQuery.findData);
-
-(function($, $d) {
-    'use strict';
-
-    var AutomatorName = 'toggle-state-destroy';
-
-    /**
-     * Data toggle state remover. Remove 'down' state and 'down' class from object that have 'data-state' attrubute.
-     * @param init - Use `false` as init for custom run to prevent double event on toggle-state-destroy element.
-     * @return {Automator}
-     */
-    var DownStateDestroyer = function(init) {
-        var $this = this;
-        var $conf = this._config;
-        var $data = $conf.data;
-
-        if (init === false) {
-            $d($data.Toggle).remData($data.Toggle).removeClass($conf.active);
-        } else {
-            $d($data.Kit).each(function() {
-                $(this).click(function(e) {
-                    e.stopPropagation();
-
-                    $d($data.Toggle).remData($data.Toggle).removeClass($conf.active);
-
-                    return false;
-                });
-
-                if ($conf.clean === true || !Automator.debug) {
-                    $(this).remData($data.Kit);
-                }
-            });
-        }
-
-        return this;
-    };
-
-    Automator(AutomatorName, DownStateDestroyer).setup('active', 'down').config({
-        Toggle: 'toggle-state'
-    });
+    Automator(AutomatorName, DownStateDestroyer).setup('toggler', []);
 })(jQuery, jQuery.findData);
 
 /**
@@ -6114,149 +6760,6 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
     Automator(AutomatorName, virtualMap).autobuild(true).escape(function () {
         if (Automator(AutomatorName).enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-})(jQuery, jQuery.findData);
-
-(function($, $d) {
-    'use strict';
-
-    var PlaceholderToggle = function(object) {
-        !isJQuery(object) ? object = $d('placeholder-toggle') : object;
-
-        object.each(function() {
-
-            $(this).focus(function() {
-                $(this).addClass('accepted');
-            }).blur(function() {
-                var min_len = $(this).getData('min-text-length');
-                var txt = $(this).prop('value');
-
-                if (txt.length === 0) {
-                    $(this).removeClass('accepted');
-                }
-                if (isNumber(min_len) && txt.length < min_len) {
-                    $(this).removeClass('accepted');
-                }
-            });
-        });
-    };
-
-    Automator('placeholder-toggle', PlaceholderToggle).autobuild(true).escape(function() {
-        if (Automator('placeholder-toggle').enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
-})(jQuery, jQuery.findData);
-(function($, $d) {
-    'use strict';
-
-    var WizardKit = function(object) {
-        !isJQuery(object) ? object = $d('wizard-kit') : object;
-
-        object.each(function(index) {
-            var wiz_id = 'wizard-' + (index + 1);
-
-            $(this).setData('wizard-id', wiz_id);
-
-            var defl;
-
-            var wiz_page = $d('wizard-page', this).setData('wizard-id', wiz_id).each(function(idx) {
-                var def = $(this).getData('wizard-page');
-                var wiz_idx = (idx + 1);
-
-                $(this).setData('wizard-index', wiz_idx);
-
-                if (wiz_idx === 1) {
-                    defl = this;
-                    $(this).setData('wizard-state', 'on-stage').addClass('on-stage');
-                }
-                if (def === 'default') {
-                    $(defl).remData('wizard-state').removeClass('on-stage');
-                    $(this).setData('wizard-state', 'on-stage').addClass('on-stage');
-                }
-            });
-
-            var wiz_next = $d('wizard-next', this).setData('wizard-id', wiz_id).click(function(e) {
-                var id = $(this).getData('wizard-id');
-
-                e.stopPropagation();
-
-                var scroll = $d({ 'wizard-kit': '?', 'wizard-id': id }).getData('wizard-kit');
-
-                if (isString(scroll)) {
-                    $(scroll).animate({
-                        scrollTop: 0
-                    }, 300, function() {
-                        Navigate(this, 'next');
-                    });
-                } else {
-                    Navigate(this, 'next');
-                }
-
-                return false;
-            });
-            var wiz_prev = $d('wizard-prev', this).setData('wizard-id', wiz_id).click(function(e) {
-                var id = $(this).getData('wizard-id');
-
-                e.stopPropagation();
-
-                var scroll = $d({ 'wizard-kit': '?', 'wizard-id': id }).getData('wizard-kit');
-
-                if (isString(scroll)) {
-                    $(scroll).animate({
-                        scrollTop: 0
-                    }, 300, function() {
-                        Navigate(this, 'next');
-                    });
-                } else {
-                    Navigate(this, 'next');
-                }
-
-                return false;
-            });
-        });
-
-        return this;
-    };
-
-    var Navigate = function(object, dir) {
-        var id = $(object).getData('wizard-id');
-
-        var pages = $d({ 'wizard-page': '?', 'wizard-id': id });
-        var active = pages.filter(':hasdata(wizard-state, on-stage)').remData('wizard-state').removeClass('on-stage');
-        var current = active.getData('wizard-index');
-
-        if (isNumber(current)) {
-            if (dir === 'next') {
-                if (current === pages.length) {
-                    pages.filter(':hasdata(wizard-index, 1)').setData('wizard-state', 'on-stage').addClass('on-stage');
-                } else {
-                    pages.filter(':hasdata(wizard-index, ' + (current + 1) + ')').setData('wizard-state', 'on-stage').addClass('on-stage');
-                }
-            } else if (dir === 'prev') {
-                if (current === 1) {
-                    pages.filter(':hasdata(wizard-index, ' + pages.length + ')').setData('wizard-state', 'on-stage').addClass('on-stage');
-                } else {
-                    pages.filter(':hasdata(wizard-index, ' + (current - 1) + ')').setData('wizard-state', 'on-stage').addClass('on-stage');
-                }
-            }
-        }
-    };
-
-    WizardKit.prototype = {
-        setup: function() {
-            
-        }
-    }
-
-    Automator('wizard-kit', WizardKit).autobuild(true).escape(function() {
-        if (Automator('wizard-kit').enabled === false) {
             return true;
         } else {
             return false;

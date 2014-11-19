@@ -218,13 +218,7 @@
             return this;
         }
     };
-    Automator('google-map', GoogleMap.Basic).autobuild(true).escape(function() {
-        if (Automator('google-map').enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
+    Automator('google-map', GoogleMap.Basic);
 
     /**
      * Build Embeded Google Map.
