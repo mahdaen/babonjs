@@ -109,36 +109,40 @@
     /* Automator Handler */
     var accordionGroup = function(object) {
         /* Wrapping Config */
-        var $cfg = GroupConfig = this._config;
+        var $conf = this._config;
+        var $data = this._config.data;
 
         // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+        !isJQuery(object) && !isString(object) ? object = $d($conf.data.Kit) : object;
 
         // Checking if object is context.
-        isString(object) ? object = $d($cfg.data.Kit, object) : object;
+        isString(object) ? object = $d($conf.data.Kit, object) : object;
 
         // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
+        object = object.filter(':hasdata(' + $conf.data.Kit + ')');
 
         // Iterating Objects.
         object.each(function() {
             /* Getting Kit ID or create new if not defined */
-            var kit_id = $(this).getData($cfg.data.KitID);
+            var kit_id = $(this).getData($conf.data.KitID);
             if (!isString(kit_id)) {
-                kit_id = $cfg.IDPrefix + ($cfg.counter + 1);
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
 
                 /* Increasing counter */
-                $cfg.counter++;
+                $conf.counter++;
             }
 
             /* Creating new kit */
             var Kit = new AccordionGroup().set({
+                $conf: $conf,
+                $data: $data,
+
                 id: kit_id,
-                holder: $(this).setData($cfg.data.KitID, kit_id)
+                holder: $(this).setData($conf.data.KitID, kit_id)
             });
 
             /* Getting config */
-            var config = $(this).getData($cfg.data.Kit);
+            var config = $(this).getData($conf.data.Kit);
             if (isObject(config)) {
                 foreach(config, function (name, value) {
                     Kit.config[name] = value;
@@ -146,10 +150,10 @@
             }
 
             /* Adding Kit to collections */
-            $cfg.maps[kit_id] = Kit;
+            $conf.maps[kit_id] = Kit;
 
             /* Getting Accordions */
-            $d(Config.data.Kit, Kit.holder).setData($cfg.data.KitID, kit_id);
+            $d(Config.data.Kit, Kit.holder).setData($conf.data.KitID, kit_id);
         });
     };
 
@@ -214,9 +218,13 @@
             this.state = Config.data.ExpandClass;
 
             /* Getting effect handler or use default */
-            if (Config.effect.expand.hasOwnProperty(efc)) {
+            if (Config.effect.expand.hasOwnProperty(efc) && efc !== 'simple') {
                 Config.effect.expand[efc].apply(this);
-            } else if (efc === 'default') {
+            } else if (efc === 'default' || efc === 'simple') {
+                if (efc === 'simple') {
+                    Config.effect.expand[efc].apply(this);
+                }
+
                 /* Adding State to Holder */
                 this.holder
                     .removeClass(Config.data.CollapseClass)
@@ -250,9 +258,13 @@
             this.state = Config.data.CollapseClass;
 
             /* Getting effect handler or use default */
-            if (Config.effect.collapse.hasOwnProperty(efc)) {
+            if (Config.effect.collapse.hasOwnProperty(efc) && efc !== 'simple') {
                 Config.effect.collapse[efc].apply(this);
-            } else if (efc === 'default') {
+            } else if (efc === 'default' || efc === 'simple') {
+                if (efc === 'simple') {
+                    Config.effect.collapse[efc].apply(this);
+                }
+
                 /* Adding State to Holder */
                 this.holder
                     .removeClass(Config.data.ExpandClass)
@@ -284,36 +296,40 @@
     // Automator Constructor.
     var accordion = function (object) {
         /* Wrapping Config */
-        var $cfg = this._config;
+        var $conf = this._config;
+        var $data = this._config.data;
 
         // Querying all kit if not defined.
-        !isJQuery(object) && !isString(object) ? object = $d($cfg.data.Kit) : object;
+        !isJQuery(object) && !isString(object) ? object = $d($conf.data.Kit) : object;
 
         // Checking if object is context.
-        isString(object) ? object = $d($cfg.data.Kit, object) : object;
+        isString(object) ? object = $d($conf.data.Kit, object) : object;
 
         // Filtering object to makes only kit left.
-        object = object.filter(':hasdata(' + $cfg.data.Kit + ')');
+        object = object.filter(':hasdata(' + $conf.data.Kit + ')');
 
         // Iterating Objects.
         object.each(function () {
             /* Getting Kit ID or create new if not defined */
-            var kit_id = $(this).getData($cfg.data.KitID);
+            var kit_id = $(this).getData($conf.data.KitID);
             if (!isString(kit_id)) {
-                kit_id = $cfg.IDPrefix + ($cfg.counter + 1);
+                kit_id = $conf.IDPrefix + ($conf.counter + 1);
 
                 /* Increasing counter */
-                $cfg.counter++;
+                $conf.counter++;
             }
 
             /* Creating new Kit */
             var Kit = new Accordion().set({
+                $conf: $conf,
+                $data: $data,
+
                 id: kit_id,
-                holder: $(this).setData($cfg.data.KitID, kit_id)
+                holder: $(this).setData($conf.data.KitID, kit_id)
             });
 
             /* Getting Configs */
-            var config = $(this).getData($cfg.data.Kit);
+            var config = $(this).getData($conf.data.Kit);
             if (isObject(config)) {
                 foreach(config, function (name, value) {
                     Kit.config[name] = value;
@@ -331,25 +347,25 @@
             }
 
             /* Adding Kit to collections */
-            $cfg.maps[kit_id] = Kit;
+            $conf.maps[kit_id] = Kit;
 
             /* Initializing Buttons, and Contents */
-            $d($cfg.data.Button, this).setData($cfg.data.KitID, kit_id);
-            $d($cfg.data.Content, this).setData($cfg.data.KitID, kit_id);
+            $d($conf.data.Button, this).setData($conf.data.KitID, kit_id);
+            $d($conf.data.Content, this).setData($conf.data.KitID, kit_id);
         });
 
         /* Configuring Kits */
-        foreach($cfg.maps, function (id, kit) {
+        foreach($conf.maps, function (id, kit) {
             // Adding Content and Buttons to Kit.
 
             /* Button Query */
-            var btQ = {}; btQ[$cfg.data.Button] = '?'; btQ[$cfg.data.KitID] = id;
+            var btQ = {}; btQ[$conf.data.Button] = '?'; btQ[$conf.data.KitID] = id;
 
             /* Adding Button */
             kit.button = $d(btQ, kit.holder);
 
             /* Content Query */
-            var ctQ = {}; ctQ[$cfg.data.Content] = '?'; ctQ[$cfg.data.KitID] = id;
+            var ctQ = {}; ctQ[$conf.data.Content] = '?'; ctQ[$conf.data.KitID] = id;
 
             /* Adding Content */
             kit.content = $d(ctQ, kit.holder);
@@ -383,10 +399,10 @@
 
                 kit.button.hover(function() {
                     /* Toggling Hover Candidate */
-                    if (nextState === $cfg.data.ExpandClass) {
-                        nextState = $cfg.data.CollapseClass;
+                    if (nextState === $conf.data.ExpandClass) {
+                        nextState = $conf.data.CollapseClass;
                     } else {
-                        nextState = $cfg.data.ExpandClass;
+                        nextState = $conf.data.ExpandClass;
                     }
 
                     /* Clear current handler to prevent uggly toggler */
@@ -409,14 +425,16 @@
                     kit.enterTimer = setTimeout(function() {
                         kit.toggle();
                     }, kit.config.delay);
+                }).mouseleave(function() {
+                    clearTimeout(kit.enterTimer);
                 });
             }
 
             /* Cleaning Up Data Attributes */
-            if ($cfg.clean || !Automator.debug) {
-                kit.holder.remData([$cfg.data.Kit, $cfg.data.KitID]);
-                kit.button.remData([$cfg.data.Button, $cfg.data.KitID]);
-                kit.content.remData([$cfg.data.Content, $cfg.data.KitID]);
+            if ($conf.clean || !Automator.debug) {
+                kit.holder.remData([$conf.data.Kit, $conf.data.KitID]);
+                kit.button.remData([$conf.data.Button, $conf.data.KitID]);
+                kit.content.remData([$conf.data.Content, $conf.data.KitID]);
 
                 foreach(Automator(AccordionGroupName).list(), function (id, kit) {
                     kit.clean();
@@ -458,4 +476,5 @@
 
     /* Creating Public Configs */
     Config = Automator(AccordionName)._config;
+    GroupConfig = Automator(AccordionGroupName)._config;
 })(jQuery, jQuery.findData);
