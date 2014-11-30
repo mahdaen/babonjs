@@ -260,17 +260,17 @@
          * @returns {Automator}
          */
         escape: function(args) {
+            var $this = this;
+
             if (isFunction(args)) {
                 /* Push new escape handler to automator */
-                this.dont.push(args);
+                $this.dont.push(args);
             } else if (isArray(args)) {
                 /* Iterate escape handler list if args is array */
-                var parent = this;
-
                 foreach(args, function (func) {
                     /* Proceed Only if func is function */
                     if (isFunction(func)) {
-                        parent.dont.push(func);
+                        $this.dont.push(func);
                     }
                 });
             }

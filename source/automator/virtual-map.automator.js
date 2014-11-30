@@ -40,6 +40,7 @@
 
         map: {},
         initializer: {},
+
         effect: {
             default: function() {
                 foreach(this.pins, function (pin) {
@@ -75,7 +76,8 @@
             action: 'click',
             effect: 'default',
             destroyer: 'default',
-            viewer: 'default'
+            viewer: 'default',
+            dropload: true
         };
 
         // Attributes Naming.
@@ -284,7 +286,9 @@
             map.set({ pins: pins, infos: infos, destroyers: destroyers });
 
             // Dropping Pins.
-            map.dropPins();
+            if (map.config.dropload === true) {
+                map.dropPins();
+            }
 
             // Calling Custom Initializer.
             foreach(Config.initializer, function(name, handler) {
@@ -350,11 +354,5 @@
         }
     };
 
-    Automator(AutomatorName, virtualMap).autobuild(true).escape(function () {
-        if (Automator(AutomatorName).enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
+    Automator(AutomatorName, virtualMap);
 })(jQuery, jQuery.findData);

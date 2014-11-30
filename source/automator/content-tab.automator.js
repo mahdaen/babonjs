@@ -199,7 +199,7 @@
             if ($conf.clean || !Automator.debug) {
                 kit.holder.remData([$data.Kit, $data.KitID]);
 
-                kit.buttons.remData([$data.button, $data.KitID]);
+                kit.buttons.remData([$data.buttons, $data.KitID]);
                 kit.content.remData([$data.content, $data.KitID]).removeAttr('default');
             }
         });

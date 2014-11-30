@@ -313,7 +313,7 @@
             kit.childs = $d(childQuery);
 
             /* Enumerating Childrens */
-            var counts = 1;
+            var counts = 0;
             var groups = 1;
 
             foreach(kit.childs, function (hChild) {
@@ -321,7 +321,7 @@
                 hChild = $(hChild);
 
                 /* Resetting counter and height if reach column count */
-                if (counts === (kit.column + 1)) {
+                if (counts === (kit.column)) {
                     counts = 1;
                     groups++;
                 } else {
@@ -368,6 +368,7 @@
                 ]);
                 kit.childs.remData([
                     $cfg.data.Child,
+                    $cfg.data.Group,
                     $cfg.data.KitID
                 ]);
             }

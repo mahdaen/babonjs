@@ -1344,17 +1344,17 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
          * @returns {Automator}
          */
         escape: function(args) {
+            var $this = this;
+
             if (isFunction(args)) {
                 /* Push new escape handler to automator */
-                this.dont.push(args);
+                $this.dont.push(args);
             } else if (isArray(args)) {
                 /* Iterate escape handler list if args is array */
-                var parent = this;
-
                 foreach(args, function (func) {
                     /* Proceed Only if func is function */
                     if (isFunction(func)) {
-                        parent.dont.push(func);
+                        $this.dont.push(func);
                     }
                 });
             }
@@ -2411,12 +2411,18 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
     var defConf = {
         responsive: true,
         retina: true,
+        mobile: true,
+        tablet: true,
         replace: false,
         clean: false,
 
         data: {
             Kit: 'background',
-            KitID: 'background-id'
+            KitID: 'background-id',
+
+            noretina: 'noretina',
+            nomobile: 'nomobile',
+            notablet: 'notablet'
         }
     };
 
@@ -2447,16 +2453,20 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 img_src = $('img', this).attr('src');
             }
 
+            var noretina = $(this).getData($cfg.data.noretina);
+            var nomobile = $(this).getData($cfg.data.nomobile);
+            var notablet = $(this).getData($cfg.data.notablet);
+
             if (isString(img_src)) {
                 var img_url = parseURL(img_src);
 
                 if (isObject(img_url)) {
                     /* Proccessing Responsive Background */
-                    if ($cfg.responsive == true) {
-                        if (window['is-mobile'] === true) {
+                    if ($cfg.responsive === true) {
+                        if ($cfg.mobile && window['is-mobile'] === true && !nomobile) {
                             /* Device is Mobile */
                             new_src = img_url.root + img_url.name + '.mob';
-                        } else if (window['is-tablet'] === true) {
+                        } else if ($cfg.tablet && window['is-tablet'] === true && !notablet) {
                             /* Device is Tablet */
                             new_src = img_url.root + img_url.name + '.tab';
                         } else {
@@ -2469,7 +2479,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                     }
 
                     /* Proccessing Retina Backround */
-                    if ($cfg.retina == true) {
+                    if ($cfg.retina == true && !noretina) {
                         /* Proccess if enabled */
                         if (window['is-retina'] === true) {
                             /* Device is Retina */
@@ -2829,7 +2839,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             kit.childs = $d(childQuery);
 
             /* Enumerating Childrens */
-            var counts = 1;
+            var counts = 0;
             var groups = 1;
 
             foreach(kit.childs, function (hChild) {
@@ -2837,7 +2847,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 hChild = $(hChild);
 
                 /* Resetting counter and height if reach column count */
-                if (counts === (kit.column + 1)) {
+                if (counts === (kit.column)) {
                     counts = 1;
                     groups++;
                 } else {
@@ -2884,6 +2894,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
                 ]);
                 kit.childs.remData([
                     $cfg.data.Child,
+                    $cfg.data.Group,
                     $cfg.data.KitID
                 ]);
             }
@@ -3667,7 +3678,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             if ($conf.clean || !Automator.debug) {
                 kit.holder.remData([$data.Kit, $data.KitID]);
 
-                kit.buttons.remData([$data.button, $data.KitID]);
+                kit.buttons.remData([$data.buttons, $data.KitID]);
                 kit.content.remData([$data.content, $data.KitID]).removeAttr('default');
             }
         });
@@ -3800,7 +3811,9 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         this.config = {
             effect: 'default',
             select: 'none',
-            type: 'anchor'
+            type: 'anchor',
+            hover: false,
+            delay: 200
         };
 
         this.holder = $('<div>');
@@ -3988,6 +4001,18 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
                 return false;
             });
+
+            if (Kit.config.hover) {
+                Kit.delayer = setTimeout(function(){}, 0);
+
+                Kit.button.hover(function() {
+                    clearTimeout(Kit.delayer);
+
+                    setTimeout(function() {
+                        Kit.toggle();
+                    }, Kit.config.delay);
+                });
+            }
 
             /* Label */
             Kit.label = $d($data.label, Kit.holder).setData($data.KitID, kit_id);
@@ -6389,6 +6414,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         var obj = $d($data.Kit).each(function() {
             $(this).click(function() {
                 $this.collapse();
+
+                return true;
             });
         });
 
@@ -6467,6 +6494,7 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
 
         map: {},
         initializer: {},
+
         effect: {
             default: function() {
                 foreach(this.pins, function (pin) {
@@ -6502,7 +6530,8 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             action: 'click',
             effect: 'default',
             destroyer: 'default',
-            viewer: 'default'
+            viewer: 'default',
+            dropload: true
         };
 
         // Attributes Naming.
@@ -6711,7 +6740,9 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
             map.set({ pins: pins, infos: infos, destroyers: destroyers });
 
             // Dropping Pins.
-            map.dropPins();
+            if (map.config.dropload === true) {
+                map.dropPins();
+            }
 
             // Calling Custom Initializer.
             foreach(Config.initializer, function(name, handler) {
@@ -6777,11 +6808,5 @@ if (typeof jQuery === 'undefined' || typeof enquire === 'undefined') {
         }
     };
 
-    Automator(AutomatorName, virtualMap).autobuild(true).escape(function () {
-        if (Automator(AutomatorName).enabled === false) {
-            return true;
-        } else {
-            return false;
-        }
-    });
+    Automator(AutomatorName, virtualMap);
 })(jQuery, jQuery.findData);

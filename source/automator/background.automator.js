@@ -10,12 +10,18 @@
     var defConf = {
         responsive: true,
         retina: true,
+        mobile: true,
+        tablet: true,
         replace: false,
         clean: false,
 
         data: {
             Kit: 'background',
-            KitID: 'background-id'
+            KitID: 'background-id',
+
+            noretina: 'noretina',
+            nomobile: 'nomobile',
+            notablet: 'notablet'
         }
     };
 
@@ -46,16 +52,20 @@
                 img_src = $('img', this).attr('src');
             }
 
+            var noretina = $(this).getData($cfg.data.noretina);
+            var nomobile = $(this).getData($cfg.data.nomobile);
+            var notablet = $(this).getData($cfg.data.notablet);
+
             if (isString(img_src)) {
                 var img_url = parseURL(img_src);
 
                 if (isObject(img_url)) {
                     /* Proccessing Responsive Background */
-                    if ($cfg.responsive == true) {
-                        if (window['is-mobile'] === true) {
+                    if ($cfg.responsive === true) {
+                        if ($cfg.mobile && window['is-mobile'] === true && !nomobile) {
                             /* Device is Mobile */
                             new_src = img_url.root + img_url.name + '.mob';
-                        } else if (window['is-tablet'] === true) {
+                        } else if ($cfg.tablet && window['is-tablet'] === true && !notablet) {
                             /* Device is Tablet */
                             new_src = img_url.root + img_url.name + '.tab';
                         } else {
@@ -68,7 +78,7 @@
                     }
 
                     /* Proccessing Retina Backround */
-                    if ($cfg.retina == true) {
+                    if ($cfg.retina == true && !noretina) {
                         /* Proccess if enabled */
                         if (window['is-retina'] === true) {
                             /* Device is Retina */

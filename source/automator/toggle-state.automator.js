@@ -15,6 +15,8 @@
         var obj = $d($data.Kit).each(function() {
             $(this).click(function() {
                 $this.collapse();
+
+                return true;
             });
         });
 

@@ -103,7 +103,9 @@
         this.config = {
             effect: 'default',
             select: 'none',
-            type: 'anchor'
+            type: 'anchor',
+            hover: false,
+            delay: 200
         };
 
         this.holder = $('<div>');
@@ -291,6 +293,18 @@
 
                 return false;
             });
+
+            if (Kit.config.hover) {
+                Kit.delayer = setTimeout(function(){}, 0);
+
+                Kit.button.hover(function() {
+                    clearTimeout(Kit.delayer);
+
+                    setTimeout(function() {
+                        Kit.toggle();
+                    }, Kit.config.delay);
+                });
+            }
 
             /* Label */
             Kit.label = $d($data.label, Kit.holder).setData($data.KitID, kit_id);
